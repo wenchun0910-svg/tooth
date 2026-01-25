@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>學生潔牙記錄表 (GitHub 版)</title>
+  <title>學生潔牙記錄表 </title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
   <style>
@@ -80,7 +80,7 @@
         btn.innerText = i;
         btn.id = `seat-${i}`;
         // 調整：w-16 h-16 (64px) 以及 text-xl
-        btn.className = 'seat-btn not-brushed w-24 h-24 text-xl rounded-full font-bold flex items-center justify-center';
+        btn.className = 'seat-btn not-brushed w-20 h-20 text-xl rounded-full font-bold flex items-center justify-center';
         btn.onclick = () => {
           if (brushedSeats.has(i)) { brushedSeats.delete(i); btn.classList.replace('brushed', 'not-brushed'); }
           else { brushedSeats.add(i); btn.classList.replace('not-brushed', 'brushed'); }

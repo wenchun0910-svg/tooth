@@ -80,7 +80,7 @@
         btn.innerText = i;
         btn.id = `seat-${i}`;
         // 調整：w-16 h-16 (64px) 以及 text-xl
-        btn.className = 'seat-btn not-brushed w-16 h-16 text-xl rounded-full font-bold flex items-center justify-center';
+        btn.className = 'seat-btn not-brushed w-24 h-24 text-xl rounded-full font-bold flex items-center justify-center';
         btn.onclick = () => {
           if (brushedSeats.has(i)) { brushedSeats.delete(i); btn.classList.replace('brushed', 'not-brushed'); }
           else { brushedSeats.add(i); btn.classList.replace('not-brushed', 'brushed'); }

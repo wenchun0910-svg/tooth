@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>學生潔牙記錄表 (GitHub 版)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+    body { font-family: 'Noto Sans TC', sans-serif; background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%); min-height: 100vh; }
+    .seat-btn { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    .brushed { background-color: white !important; color: #0369a1 !important; border: 2px solid #0ea5e9; }
+    .not-brushed { background-color: #0ea5e9; color: white; border: 2px solid transparent; }
+    .watermark { position: fixed; bottom: 10px; right: 15px; opacity: 0.4; font-size: 14px; pointer-events: none; color: #64748b; }
+    .loading-overlay { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px); }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+
+  <!-- 請在此處填入您 GAS 部署後獲得的「網頁應用程式網址」 -->
+  <script>
+    const GAS_WEB_APP_URL = "在此貼上您的_GAS_WEB_APP_URL";
+  </script>
+
+  <div class="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden animate__animated animate__fadeIn">
+    <div class="bg-sky-600 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
+      <h1 class="text-2xl md:text-3xl font-bold text-white flex items-center">
+        <span class="mr-2">🦷</span> 學生潔牙記錄表
+      </h1>
+      <button onclick="submitRecords()" class="bg-white text-sky-600 px-6 py-2 rounded-full font-bold hover:bg-sky-50 transition-colors shadow-lg">
+        結束記錄
+      </button>
+    </div>
+
+    <div class="p-6 border-b border-gray-100 flex flex-col md:flex-row items-center gap-4 bg-sky-50">
+      <div class="flex items-center gap-3">
+        <label class="text-gray-700 font-medium">學生人數：</label>
+        <input type="number" id="studentCount" min="1" max="100" value="30" class="w-20 px-3 py-2 border-2 border-sky-200 rounded-lg">
+        <button onclick="generateSeats()" class="bg-sky-500 text-white px-4 py-2 rounded-lg hover:bg-sky-600">生成座號</button>
+      </div>
+      <div class="text-sm text-sky-600 font-medium ml-auto">今日日期：<span id="displayDate"></span></div>
+    </div>
+
+    <div id="seatsGrid" class="p-6 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-4 min-h-[300px]"></div>
+
+    <div class="p-6 flex justify-end gap-4 border-t border-gray-100">
+      <button onclick="resetUI()" class="flex items-center gap-2 px-6 py-2 border-2 border-gray-300 text-gray-500 rounded-xl hover:bg-gray-50">
+        重置
+      </button>
+    </div>
+  </div>
+
+  <div class="watermark">文君製作</div>
+
+  <div id="loader" class="hidden fixed inset-0 loading-overlay flex flex-col items-center justify-center z-50">
+    <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-sky-600"></div>
+    <p class="mt-4 text-sky-800 font-bold">資料儲存中，請稍候...</p>
+  </div>
+
+  <div id="messageBox" class="hidden fixed top-5 left-1/2 -translate-x-1/2 bg-white border-l-4 shadow-xl p-4 rounded-lg z-50">
+    <span id="messageText" class="text-gray-800 font-medium"></span>
+  </div>
+
+  <script>
+    let brushedSeats = new Set();
+    const today = new Date();
+    const formattedDate = (today.getMonth() + 1).toString().padStart(2, '0') + '/' + today.getDate().toString().padStart(2, '0');
+    document.getElementById('displayDate').innerText = formattedDate;
+
+    function generateSeats() {
+      const count = parseInt(document.getElementById('studentCount').value);
+      const grid = document.getElementById('seatsGrid');
+      grid.innerHTML = '';
+      brushedSeats.clear();
+      for (let i = 1; i <= count; i++) {
+        const btn = document.createElement('button');
+        btn.innerText = i;
+        btn.id = `seat-${i}`;
+        btn.className = 'seat-btn not-brushed w-12 h-12 rounded-full font-bold flex items-center justify-center';
+        btn.onclick = () => {
+          if (brushedSeats.has(i)) { brushedSeats.delete(i); btn.classList.replace('brushed', 'not-brushed'); }
+          else { brushedSeats.add(i); btn.classList.replace('not-brushed', 'brushed'); }
+        };
+        grid.appendChild(btn);
+      }
+    }
+
+    async function submitRecords() {
+      const count = parseInt(document.getElementById('studentCount').value);
+      if (GAS_WEB_APP_URL === "在此貼上您的_GAS_WEB_APP_URL") {
+        showMessage("錯誤：請先在 index.html 中設定您的 GAS 網址", "border-red-500");
+        return;
+      }
+
+      document.getElementById('loader').classList.remove('hidden');
+      const records = {};
+      for (let i = 1; i <= count; i++) { records[i] = brushedSeats.has(i) ? "是" : "否"; }
+
+      try {
+        // 使用 fetch 發送 POST 請求到 GAS
+        const response = await fetch(GAS_WEB_APP_URL, {
+          method: "POST",
+          mode: "no-cors", // 重要：GAS 的 Web App 轉向需要 no-cors 或特殊處理
+          body: JSON.stringify({ date: formattedDate, records: records }),
+          headers: { "Content-Type": "text/plain" }
+        });
+
+        // 因為 no-cors 無法讀取內容，我們假設發送成功或等待一會
+        setTimeout(() => {
+          document.getElementById('loader').classList.add('hidden');
+          showMessage("資料已送出！(請檢查試算表)", "border-green-500");
+        }, 1000);
+
+      } catch (err) {
+        document.getElementById('loader').classList.add('hidden');
+        showMessage("連線失敗：" + err, "border-red-500");
+      }
+    }
+
+    function resetUI() {
+      document.getElementById('seatsGrid').innerHTML = '';
+      brushedSeats.clear();
+      showMessage("已重置", "border-gray-500");
+    }
+
+    function showMessage(text, borderColor) {
+      const box = document.getElementById('messageBox');
+      const txt = document.getElementById('messageText');
+      box.className = `fixed top-5 left-1/2 -translate-x-1/2 bg-white border-l-4 shadow-xl p-4 rounded-lg z-50 ${borderColor}`;
+      txt.innerText = text;
+      box.classList.remove('hidden');
+      setTimeout(() => box.classList.add('hidden'), 3000);
+    }
+
+    window.onload = generateSeats;
+  </script>
+</body>
+</html>

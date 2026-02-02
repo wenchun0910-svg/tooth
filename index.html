@@ -17,19 +17,24 @@
     .loading-overlay { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px); }
     
     /* Tab Styles */
-    .tab-btn { @apply px-6 py-3 font-bold text-sky-100 transition-colors rounded-t-lg; }
+    .tab-btn { @apply px-4 sm:px-6 py-3 font-bold text-sky-100 transition-colors rounded-t-lg text-sm sm:text-base; }
     .tab-btn.active { @apply bg-white text-sky-600 shadow-sm; }
     .tab-btn:not(.active):hover { @apply text-white bg-sky-700/50; }
+
+    /* Table Styles */
+    .weekly-table th { @apply bg-sky-100 text-sky-800 p-2 border border-sky-200 text-center whitespace-nowrap; }
+    .weekly-table td { @apply p-2 border border-sky-100 text-center; }
+    .weekly-table tr:nth-child(even) { @apply bg-sky-50/50; }
   </style>
 </head>
 <body class="p-4 md:p-8">
 
   <!-- 請在此處填入您 GAS 部署後獲得的「網頁應用程式網址」 -->
   <script>
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzvr6Xe2EvF1k5txU9kHOzyVKeH5giNx0SpX3jvhK0XzGii_LpxEAofaK-Si4bgZalE/exec";
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzKwkvRJNBHgeNlXNoN29o21o2lQQCjvag48RgAjqLvCI--WlYH-9SvxdadhnyZd0oD/exec";
   </script>
 
-  <div class="max-w-4xl mx-auto rounded-3xl shadow-2xl overflow-hidden animate__animated animate__fadeIn">
+  <div class="max-w-5xl mx-auto rounded-3xl shadow-2xl overflow-hidden animate__animated animate__fadeIn">
     
     <!-- Header with Tabs -->
     <div class="bg-sky-600 px-6 pt-6 pb-0">
@@ -40,9 +45,10 @@
       </div>
       
       <!-- Tabs -->
-      <div class="flex gap-2">
-        <button id="tab-today" onclick="switchTab('today')" class="tab-btn active">今日記錄</button>
-        <button id="tab-history" onclick="switchTab('history')" class="tab-btn">歷史查詢 / 修改</button>
+      <div class="flex overflow-x-auto">
+        <button id="tab-today" onclick="switchTab('today')" class="tab-btn active shrink-0">今日記錄</button>
+        <button id="tab-history" onclick="switchTab('history')" class="tab-btn shrink-0">單日查詢/修改</button>
+        <button id="tab-weekly" onclick="switchTab('weekly')" class="tab-btn shrink-0">一週總覽</button>
       </div>
     </div>
 
@@ -53,7 +59,7 @@
       <div class="p-6 border-b border-gray-100 bg-sky-50">
         
         <!-- Today Mode Controls -->
-        <div id="controls-today" class="flex flex-col md:flex-row items-center gap-4">
+        <div id="controls-today" class="mode-control flex flex-col md:flex-row items-center gap-4">
           <div class="flex items-center gap-3">
             <label class="text-gray-700 font-medium">學生人數：</label>
             <input type="number" id="studentCount" min="1" max="100" value="30" class="w-20 px-3 py-2 border-2 border-sky-200 rounded-lg text-lg">
@@ -64,31 +70,60 @@
           </div>
         </div>
 
-        <!-- History Mode Controls (Initially Hidden) -->
-        <div id="controls-history" class="hidden flex flex-col md:flex-row items-center gap-4 w-full">
+        <!-- History Mode Controls -->
+        <div id="controls-history" class="mode-control hidden flex flex-col md:flex-row items-center gap-4 w-full">
           <div class="flex items-center gap-3 w-full">
             <label class="text-gray-700 font-medium">查詢日期：</label>
             <input type="date" id="queryDate" class="px-3 py-2 border-2 border-sky-200 rounded-lg text-lg text-gray-700">
             <button onclick="queryData()" class="bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-600 font-medium shadow-sm flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
               查詢
+            </button>
+          </div>
+        </div>
+
+        <!-- Weekly Mode Controls -->
+        <div id="controls-weekly" class="mode-control hidden flex flex-col md:flex-row items-center gap-4 w-full">
+          <div class="flex items-center gap-3 w-full">
+            <label class="text-gray-700 font-medium">起始日期 (週一)：</label>
+            <input type="date" id="weeklyStartDate" class="px-3 py-2 border-2 border-sky-200 rounded-lg text-lg text-gray-700">
+            <button onclick="queryWeeklyData()" class="bg-emerald-500 text-white px-6 py-2 rounded-lg hover:bg-emerald-600 font-medium shadow-sm flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+              顯示一週記錄
             </button>
           </div>
         </div>
 
       </div>
 
-      <!-- Grid Container -->
+      <!-- Content Views -->
       <div class="relative">
+        
+        <!-- 1. Seat Grid View (For Today & History) -->
         <div id="seatsGrid" class="p-6 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-6 justify-items-center min-h-[300px]">
           <!-- Seats generated here -->
         </div>
         
-        <!-- Empty State Message -->
-        <div id="emptyState" class="hidden absolute inset-0 flex flex-col items-center justify-center text-gray-400">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+        <!-- 2. Weekly Table View -->
+        <div id="weeklyView" class="hidden p-6 overflow-x-auto min-h-[300px]">
+          <table class="w-full weekly-table border-collapse">
+            <thead>
+              <tr id="weeklyHeaderRow">
+                <!-- Headers generated by JS -->
+              </tr>
+            </thead>
+            <tbody id="weeklyBody">
+              <!-- Rows generated by JS -->
+            </tbody>
+          </table>
+          <div id="weeklyEmpty" class="hidden text-center text-gray-400 mt-10">
+            <p class="text-lg">請選擇起始日期並查詢</p>
+          </div>
+        </div>
+
+        <!-- Empty State Message for Grid -->
+        <div id="emptyState" class="hidden absolute inset-0 flex flex-col items-center justify-center text-gray-400 pointer-events-none">
+          <svg class="h-16 w-16 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           <p class="text-lg">請選擇日期並點擊查詢</p>
         </div>
       </div>
@@ -96,17 +131,15 @@
       <!-- Footer Actions -->
       <div class="p-6 border-t border-gray-100 flex justify-between items-center bg-gray-50">
         <button onclick="resetUI()" class="flex items-center gap-2 px-6 py-2 border-2 border-gray-300 text-gray-500 rounded-xl hover:bg-white transition-all font-medium">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg>
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg>
           畫面重置
         </button>
 
         <div class="flex gap-4">
-          <!-- History Mode Actions -->
           <button id="btn-delete" onclick="deleteData()" class="hidden bg-red-100 text-red-600 border-2 border-red-200 px-6 py-2 rounded-xl font-bold hover:bg-red-200 transition-colors">
             刪除此日記錄
           </button>
           
-          <!-- Submit/Update Button -->
           <button id="btn-submit" onclick="submitRecords()" class="bg-sky-600 text-white px-8 py-2 rounded-xl font-bold hover:bg-sky-700 transition-colors shadow-md flex items-center gap-2">
             <span id="submit-text">結束記錄 (儲存)</span>
           </button>
@@ -118,75 +151,84 @@
 
   <div class="watermark">文君製作</div>
 
-  <!-- Loading -->
+  <!-- Loading & Message -->
   <div id="loader" class="hidden fixed inset-0 loading-overlay flex flex-col items-center justify-center z-50">
     <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-sky-600"></div>
     <p id="loader-text" class="mt-4 text-sky-800 font-bold">資料處理中...</p>
   </div>
 
-  <!-- Message Box -->
   <div id="messageBox" class="hidden fixed top-5 left-1/2 -translate-x-1/2 bg-white border-l-4 shadow-xl p-4 rounded-lg z-50 animate__animated animate__fadeInDown">
     <span id="messageText" class="text-gray-800 font-medium"></span>
   </div>
 
   <script>
     let brushedSeats = new Set();
-    let currentMode = 'today'; // 'today' or 'history'
-    let currentQueryDate = ''; // 'MM/DD'
+    let currentMode = 'today'; 
+    let currentQueryDate = ''; 
 
-    // 初始化日期
     const today = new Date();
     const formattedToday = (today.getMonth() + 1).toString().padStart(2, '0') + '/' + today.getDate().toString().padStart(2, '0');
     document.getElementById('displayDate').innerText = formattedToday;
-
-    // 設定查詢日期的預設值為今日
+    
+    // 初始化日期輸入
     document.getElementById('queryDate').valueAsDate = new Date();
+    // 設定週檢視預設為本週一
+    const day = today.getDay();
+    const diff = today.getDate() - day + (day == 0 ? -6 : 1); 
+    const monday = new Date(today.setDate(diff));
+    document.getElementById('weeklyStartDate').valueAsDate = monday;
 
-    // 初始化
-    window.onload = () => {
-      generateSeats();
-    };
+    window.onload = () => { generateSeats(); };
 
-    // 切換分頁
     function switchTab(mode) {
       currentMode = mode;
-      document.getElementById('tab-today').className = `tab-btn ${mode === 'today' ? 'active' : ''}`;
-      document.getElementById('tab-history').className = `tab-btn ${mode === 'history' ? 'active' : ''}`;
       
+      // Update Tab Styles
+      ['today', 'history', 'weekly'].forEach(m => {
+        document.getElementById(`tab-${m}`).className = `tab-btn shrink-0 ${mode === m ? 'active' : ''}`;
+        document.getElementById(`controls-${m}`).classList.add('hidden');
+      });
+      document.getElementById(`controls-${mode}`).classList.remove('hidden');
+
+      // Update View Visibility
+      const grid = document.getElementById('seatsGrid');
+      const weekly = document.getElementById('weeklyView');
+      const empty = document.getElementById('emptyState');
+      const btnSubmit = document.getElementById('btn-submit');
+      const btnDelete = document.getElementById('btn-delete');
+
+      grid.classList.add('hidden');
+      weekly.classList.add('hidden');
+      empty.classList.add('hidden');
+      btnSubmit.classList.add('hidden');
+      btnDelete.classList.add('hidden');
+
       if (mode === 'today') {
-        document.getElementById('controls-today').classList.remove('hidden');
-        document.getElementById('controls-history').classList.add('hidden');
-        document.getElementById('btn-delete').classList.add('hidden');
+        grid.classList.remove('hidden');
+        btnSubmit.classList.remove('hidden');
         document.getElementById('submit-text').innerText = "結束記錄 (儲存)";
-        document.getElementById('btn-submit').classList.remove('bg-amber-500', 'hover:bg-amber-600');
-        document.getElementById('btn-submit').classList.add('bg-sky-600', 'hover:bg-sky-700');
-        document.getElementById('emptyState').classList.add('hidden');
-        document.getElementById('seatsGrid').classList.remove('hidden');
-        
-        // 重置為今日狀態
+        btnSubmit.className = "bg-sky-600 text-white px-8 py-2 rounded-xl font-bold hover:bg-sky-700 transition-colors shadow-md flex items-center gap-2";
         resetUI();
-      } else {
-        document.getElementById('controls-today').classList.add('hidden');
-        document.getElementById('controls-history').classList.remove('hidden');
+      } else if (mode === 'history') {
+        grid.classList.remove('hidden');
+        empty.classList.remove('hidden');
         document.getElementById('submit-text').innerText = "修改並儲存";
-        document.getElementById('btn-submit').classList.remove('bg-sky-600', 'hover:bg-sky-700');
-        document.getElementById('btn-submit').classList.add('bg-amber-500', 'hover:bg-amber-600');
-        
-        // 歷史模式初始狀態
-        document.getElementById('seatsGrid').innerHTML = '';
-        document.getElementById('emptyState').classList.remove('hidden');
-        document.getElementById('btn-submit').classList.add('hidden');
-        document.getElementById('btn-delete').classList.add('hidden');
+        btnSubmit.className = "bg-amber-500 text-white px-8 py-2 rounded-xl font-bold hover:bg-amber-600 transition-colors shadow-md flex items-center gap-2 hidden";
+        // History mode starts empty until query
+        grid.innerHTML = '';
+      } else if (mode === 'weekly') {
+        weekly.classList.remove('hidden');
+        document.getElementById('weeklyEmpty').classList.remove('hidden');
+        document.getElementById('weeklyBody').innerHTML = '';
+        document.getElementById('weeklyHeaderRow').innerHTML = '';
       }
     }
 
-    // 生成座號
+    // --- 座號生成與邏輯 (Today & History) ---
     function generateSeats(seatData = null) {
       const count = parseInt(document.getElementById('studentCount').value);
       const grid = document.getElementById('seatsGrid');
       grid.innerHTML = '';
-      
-      // 如果沒有傳入特定資料，則清空選取狀態
       if (!seatData) brushedSeats.clear();
 
       for (let i = 1; i <= count; i++) {
@@ -194,20 +236,18 @@
         btn.innerText = i;
         btn.id = `seat-${i}`;
         
-        // 判斷初始狀態
         let isBrushed = false;
         if (seatData) {
-          if (seatData[i] === '是') isBrushed = true;
+           isBrushed = (seatData[i] === '是');
         } else {
-          if (brushedSeats.has(i)) isBrushed = true;
+           isBrushed = brushedSeats.has(i);
         }
 
-        if (isBrushed) {
-          brushedSeats.add(i);
-          btn.className = 'seat-btn brushed w-16 h-16 text-xl rounded-full font-bold flex items-center justify-center';
-        } else {
-          btn.className = 'seat-btn not-brushed w-16 h-16 text-xl rounded-full font-bold flex items-center justify-center';
-        }
+        btn.className = isBrushed 
+          ? 'seat-btn brushed w-16 h-16 text-xl rounded-full font-bold flex items-center justify-center'
+          : 'seat-btn not-brushed w-16 h-16 text-xl rounded-full font-bold flex items-center justify-center';
+        
+        if (isBrushed) brushedSeats.add(i);
 
         btn.onclick = () => {
           if (brushedSeats.has(i)) { 
@@ -222,55 +262,107 @@
       }
     }
 
-    // 格式化日期 YYYY-MM-DD -> MM/DD
-    function formatDateToMMDD(dateString) {
-      const parts = dateString.split('-'); // [YYYY, MM, DD]
-      if (parts.length === 3) {
-        return `${parts[1]}/${parts[2]}`;
+    // --- 週檢視邏輯 ---
+    async function queryWeeklyData() {
+      const startDate = document.getElementById('weeklyStartDate').value;
+      if (!startDate) { showMessage("請選擇起始日期", "border-red-500"); return; }
+      if (!validateUrl()) return;
+
+      showLoader("查詢一週資料中...");
+
+      try {
+        const url = `${GAS_WEB_APP_URL.trim()}?action=weekly_query&startDate=${startDate}`;
+        const response = await fetch(url);
+        const json = await response.json();
+        hideLoader();
+
+        if (json.status === 'success') {
+           renderWeeklyTable(json.dates, json.data);
+           document.getElementById('weeklyEmpty').classList.add('hidden');
+        } else {
+           showMessage(json.message, "border-red-500");
+        }
+      } catch (err) {
+        hideLoader();
+        showMessage("查詢失敗：" + err, "border-red-500");
       }
+    }
+
+    function renderWeeklyTable(dates, data) {
+      const headerRow = document.getElementById('weeklyHeaderRow');
+      const body = document.getElementById('weeklyBody');
+      headerRow.innerHTML = '<th>座號</th>';
+      body.innerHTML = '';
+
+      // Render Header
+      dates.forEach(d => {
+        const th = document.createElement('th');
+        th.innerText = d;
+        headerRow.appendChild(th);
+      });
+
+      // Render Rows
+      // keys usually are seat numbers. Sort them.
+      const seats = Object.keys(data).map(Number).sort((a,b) => a-b);
+      
+      seats.forEach(seat => {
+        const tr = document.createElement('tr');
+        
+        // Seat Cell
+        const tdSeat = document.createElement('td');
+        tdSeat.className = "font-bold text-sky-700 bg-sky-50";
+        tdSeat.innerText = seat;
+        tr.appendChild(tdSeat);
+
+        // Data Cells
+        const weekStatus = data[seat]; // Array of 7 statuses
+        weekStatus.forEach(status => {
+          const td = document.createElement('td');
+          if (status === '是') {
+             td.innerHTML = '<span class="text-green-500 font-bold">●</span>'; // Checkmark
+             td.className = "bg-green-50";
+          } else if (status === '否') {
+             td.innerHTML = '<span class="text-gray-300">○</span>';
+          } else {
+             td.innerText = "-"; // No data column
+             td.className = "text-gray-300 bg-gray-50";
+          }
+          tr.appendChild(td);
+        });
+        body.appendChild(tr);
+      });
+    }
+
+    // --- 通用功能 (查詢單日、刪除、儲存) ---
+    function formatDateToMMDD(dateString) {
+      const parts = dateString.split('-'); 
+      if (parts.length === 3) return `${parts[1]}/${parts[2]}`;
       return dateString;
     }
 
-    // 查詢資料
     async function queryData() {
       const dateInput = document.getElementById('queryDate').value;
-      if (!dateInput) {
-        showMessage("請選擇日期", "border-red-500");
-        return;
-      }
-
+      if (!dateInput) { showMessage("請選擇日期", "border-red-500"); return; }
       currentQueryDate = formatDateToMMDD(dateInput);
-      
       if (!validateUrl()) return;
 
-      showLoader("查詢資料中...");
-
+      showLoader("查詢中...");
       try {
         const url = `${GAS_WEB_APP_URL.trim()}?action=query&date=${currentQueryDate}`;
         const response = await fetch(url);
         const json = await response.json();
-
         hideLoader();
 
         if (json.status === 'success') {
-          // 隱藏空狀態，顯示網格
           document.getElementById('emptyState').classList.add('hidden');
-          document.getElementById('seatsGrid').classList.remove('hidden');
-          
-          // 根據資料生成按鈕
-          // 找出最大的座號以設定人數
           const seats = Object.keys(json.data).map(Number);
           const maxSeat = seats.length > 0 ? Math.max(...seats) : 30;
           document.getElementById('studentCount').value = maxSeat;
-          
           brushedSeats.clear();
           generateSeats(json.data);
-          
-          // 顯示操作按鈕
           document.getElementById('btn-submit').classList.remove('hidden');
           document.getElementById('btn-delete').classList.remove('hidden');
-          
-          showMessage(`已載入 ${currentQueryDate} 的資料`, "border-green-500");
+          showMessage(`載入 ${currentQueryDate} 資料`, "border-green-500");
         } else {
           showMessage(json.message || "查無資料", "border-amber-500");
           document.getElementById('seatsGrid').innerHTML = '';
@@ -278,84 +370,54 @@
           document.getElementById('btn-submit').classList.add('hidden');
           document.getElementById('btn-delete').classList.add('hidden');
         }
-
       } catch (err) {
         hideLoader();
-        showMessage("查詢失敗：" + err, "border-red-500");
-        console.error(err);
+        showMessage("查詢失敗", "border-red-500");
       }
     }
 
-    // 刪除資料
     async function deleteData() {
-      if (!confirm(`確定要刪除 ${currentQueryDate} 的所有記錄嗎？此動作無法復原。`)) return;
-
+      if (!confirm(`確定刪除 ${currentQueryDate} 記錄？`)) return;
       if (!validateUrl()) return;
       showLoader("刪除中...");
-
       try {
-        const response = await fetch(GAS_WEB_APP_URL.trim(), {
+        await fetch(GAS_WEB_APP_URL.trim(), {
           method: "POST",
-          // 刪除時我們需要知道結果，所以嘗試不使用 no-cors，
-          // 但如果遇到 CORS 錯誤，伺服器端其實已經執行了。
-          // 為了相容性，我們先用標準模式，若失敗則提示檢查
           body: JSON.stringify({ action: 'delete', date: currentQueryDate }),
           headers: { "Content-Type": "text/plain" }
         });
-        
-        const result = await response.json();
         hideLoader();
-        
-        if (result.status === 'success' || result.message.includes('已刪除')) {
-           showMessage("刪除成功", "border-green-500");
-           // 清空畫面
-           document.getElementById('seatsGrid').innerHTML = '';
-           document.getElementById('emptyState').classList.remove('hidden');
-           document.getElementById('btn-submit').classList.add('hidden');
-           document.getElementById('btn-delete').classList.add('hidden');
-        } else {
-           showMessage("刪除回應：" + result.message, "border-amber-500");
-        }
-
+        showMessage("已送出刪除請求", "border-green-500");
+        resetUI();
       } catch (err) {
         hideLoader();
-        // 即使發生 CORS 錯誤，通常請求已發送
-        showMessage("已送出刪除請求 (若未消失請重新整理)", "border-gray-500");
+        showMessage("已送出請求 (若未反應請刷新)", "border-gray-500");
       }
     }
 
-    // 儲存或更新資料
     async function submitRecords() {
       if (!validateUrl()) return;
-
       const count = parseInt(document.getElementById('studentCount').value);
       const records = {};
       for (let i = 1; i <= count; i++) { records[i] = brushedSeats.has(i) ? "是" : "否"; }
-
-      // 決定使用的日期：今日模式用 formattedToday，歷史模式用 currentQueryDate
       const targetDate = (currentMode === 'today') ? formattedToday : currentQueryDate;
 
-      showLoader("資料儲存中...");
-
+      showLoader("儲存中...");
       try {
         const response = await fetch(GAS_WEB_APP_URL.trim(), {
           method: "POST",
           body: JSON.stringify({ action: 'save', date: targetDate, records: records }),
           headers: { "Content-Type": "text/plain" }
         });
-
         const result = await response.json();
         hideLoader();
         showMessage(result.message || "儲存成功", "border-green-500");
-
       } catch (err) {
         hideLoader();
-        // 如果是歷史修改模式，可能會有 CORS 警告但成功
         showMessage("已送出資料", "border-blue-500");
       }
     }
 
-    // 工具函式
     function validateUrl() {
       if (!GAS_WEB_APP_URL || !GAS_WEB_APP_URL.includes("script.google.com")) {
         showMessage("錯誤：請先設定 GAS 網址", "border-red-500");
@@ -366,26 +428,25 @@
 
     function resetUI() {
       if (currentMode === 'today') {
-        generateSeats(); // 重生空白按鈕
-      } else {
-        document.getElementById('queryDate').value = '';
+        generateSeats();
+      } else if (currentMode === 'history') {
         document.getElementById('seatsGrid').innerHTML = '';
         document.getElementById('emptyState').classList.remove('hidden');
         document.getElementById('btn-submit').classList.add('hidden');
         document.getElementById('btn-delete').classList.add('hidden');
+      } else {
+        document.getElementById('weeklyBody').innerHTML = '';
+        document.getElementById('weeklyHeaderRow').innerHTML = '';
+        document.getElementById('weeklyEmpty').classList.remove('hidden');
       }
-      showMessage("畫面已重置", "border-gray-500");
+      showMessage("已重置", "border-gray-500");
     }
 
     function showLoader(text) {
       document.getElementById('loader-text').innerText = text;
       document.getElementById('loader').classList.remove('hidden');
     }
-
-    function hideLoader() {
-      document.getElementById('loader').classList.add('hidden');
-    }
-
+    function hideLoader() { document.getElementById('loader').classList.add('hidden'); }
     function showMessage(text, borderColor) {
       const box = document.getElementById('messageBox');
       const txt = document.getElementById('messageText');

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>學生潔牙記錄表 </title>
+  <title>學生潔牙記錄表 (GitHub 版)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
   <style>
@@ -15,127 +15,385 @@
     .not-brushed { background-color: #0ea5e9; color: white; border: 3px solid transparent; }
     .watermark { position: fixed; bottom: 10px; right: 15px; opacity: 0.4; font-size: 14px; pointer-events: none; color: #64748b; }
     .loading-overlay { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px); }
+    
+    /* Tab Styles */
+    .tab-btn { @apply px-6 py-3 font-bold text-sky-100 transition-colors rounded-t-lg; }
+    .tab-btn.active { @apply bg-white text-sky-600 shadow-sm; }
+    .tab-btn:not(.active):hover { @apply text-white bg-sky-700/50; }
   </style>
 </head>
 <body class="p-4 md:p-8">
 
   <!-- 請在此處填入您 GAS 部署後獲得的「網頁應用程式網址」 -->
   <script>
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwZgrUDIiJBa2r_MtSyfK_986H6C44REhAO9Ab6dH0QTFB3u8y8a9fHokx6s_AQSeCr/exec";
+    const GAS_WEB_APP_URL = "在此貼上您的_GAS_WEB_APP_URL";
   </script>
 
-  <div class="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden animate__animated animate__fadeIn">
-    <div class="bg-sky-600 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
-      <h1 class="text-2xl md:text-3xl font-bold text-white flex items-center">
-        <span class="mr-2">🦷</span> 學生潔牙記錄表
-      </h1>
-      <button onclick="submitRecords()" class="bg-white text-sky-600 px-6 py-2 rounded-full font-bold hover:bg-sky-50 transition-colors shadow-lg">
-        結束記錄
-      </button>
-    </div>
-
-    <div class="p-6 border-b border-gray-100 flex flex-col md:flex-row items-center gap-4 bg-sky-50">
-      <div class="flex items-center gap-3">
-        <label class="text-gray-700 font-medium">學生人數：</label>
-        <input type="number" id="studentCount" min="1" max="100" value="30" class="w-20 px-3 py-2 border-2 border-sky-200 rounded-lg text-lg">
-        <button onclick="generateSeats()" class="bg-sky-500 text-white px-4 py-2 rounded-lg hover:bg-sky-600 font-medium">生成座號</button>
+  <div class="max-w-4xl mx-auto rounded-3xl shadow-2xl overflow-hidden animate__animated animate__fadeIn">
+    
+    <!-- Header with Tabs -->
+    <div class="bg-sky-600 px-6 pt-6 pb-0">
+      <div class="flex flex-col md:flex-row justify-between items-center mb-4">
+        <h1 class="text-2xl md:text-3xl font-bold text-white flex items-center mb-4 md:mb-0">
+          <span class="mr-2">🦷</span> 學生潔牙記錄表
+        </h1>
       </div>
-      <div class="text-sm text-sky-600 font-medium ml-auto">今日日期：<span id="displayDate"></span></div>
+      
+      <!-- Tabs -->
+      <div class="flex gap-2">
+        <button id="tab-today" onclick="switchTab('today')" class="tab-btn active">今日記錄</button>
+        <button id="tab-history" onclick="switchTab('history')" class="tab-btn">歷史查詢 / 修改</button>
+      </div>
     </div>
 
-    <!-- 調整：加大 gap 為 gap-6 -->
-    <div id="seatsGrid" class="p-6 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-6 justify-items-center min-h-[300px]"></div>
+    <!-- Main Content Area -->
+    <div class="bg-white min-h-[500px]">
+      
+      <!-- Control Panel -->
+      <div class="p-6 border-b border-gray-100 bg-sky-50">
+        
+        <!-- Today Mode Controls -->
+        <div id="controls-today" class="flex flex-col md:flex-row items-center gap-4">
+          <div class="flex items-center gap-3">
+            <label class="text-gray-700 font-medium">學生人數：</label>
+            <input type="number" id="studentCount" min="1" max="100" value="30" class="w-20 px-3 py-2 border-2 border-sky-200 rounded-lg text-lg">
+            <button onclick="generateSeats()" class="bg-sky-500 text-white px-4 py-2 rounded-lg hover:bg-sky-600 font-medium">重設座號</button>
+          </div>
+          <div class="text-sm text-sky-600 font-medium ml-auto">
+            今日日期：<span id="displayDate" class="text-lg font-bold"></span>
+          </div>
+        </div>
 
-    <div class="p-6 flex justify-end gap-4 border-t border-gray-100">
-      <button onclick="resetUI()" class="flex items-center gap-2 px-6 py-2 border-2 border-gray-300 text-gray-500 rounded-xl hover:bg-gray-50">
-        重置
-      </button>
+        <!-- History Mode Controls (Initially Hidden) -->
+        <div id="controls-history" class="hidden flex flex-col md:flex-row items-center gap-4 w-full">
+          <div class="flex items-center gap-3 w-full">
+            <label class="text-gray-700 font-medium">查詢日期：</label>
+            <input type="date" id="queryDate" class="px-3 py-2 border-2 border-sky-200 rounded-lg text-lg text-gray-700">
+            <button onclick="queryData()" class="bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-600 font-medium shadow-sm flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
+              查詢
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Grid Container -->
+      <div class="relative">
+        <div id="seatsGrid" class="p-6 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-6 justify-items-center min-h-[300px]">
+          <!-- Seats generated here -->
+        </div>
+        
+        <!-- Empty State Message -->
+        <div id="emptyState" class="hidden absolute inset-0 flex flex-col items-center justify-center text-gray-400">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <p class="text-lg">請選擇日期並點擊查詢</p>
+        </div>
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="p-6 border-t border-gray-100 flex justify-between items-center bg-gray-50">
+        <button onclick="resetUI()" class="flex items-center gap-2 px-6 py-2 border-2 border-gray-300 text-gray-500 rounded-xl hover:bg-white transition-all font-medium">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg>
+          畫面重置
+        </button>
+
+        <div class="flex gap-4">
+          <!-- History Mode Actions -->
+          <button id="btn-delete" onclick="deleteData()" class="hidden bg-red-100 text-red-600 border-2 border-red-200 px-6 py-2 rounded-xl font-bold hover:bg-red-200 transition-colors">
+            刪除此日記錄
+          </button>
+          
+          <!-- Submit/Update Button -->
+          <button id="btn-submit" onclick="submitRecords()" class="bg-sky-600 text-white px-8 py-2 rounded-xl font-bold hover:bg-sky-700 transition-colors shadow-md flex items-center gap-2">
+            <span id="submit-text">結束記錄 (儲存)</span>
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 
   <div class="watermark">文君製作</div>
 
+  <!-- Loading -->
   <div id="loader" class="hidden fixed inset-0 loading-overlay flex flex-col items-center justify-center z-50">
     <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-sky-600"></div>
-    <p class="mt-4 text-sky-800 font-bold">資料儲存中，請稍候...</p>
+    <p id="loader-text" class="mt-4 text-sky-800 font-bold">資料處理中...</p>
   </div>
 
-  <div id="messageBox" class="hidden fixed top-5 left-1/2 -translate-x-1/2 bg-white border-l-4 shadow-xl p-4 rounded-lg z-50">
+  <!-- Message Box -->
+  <div id="messageBox" class="hidden fixed top-5 left-1/2 -translate-x-1/2 bg-white border-l-4 shadow-xl p-4 rounded-lg z-50 animate__animated animate__fadeInDown">
     <span id="messageText" class="text-gray-800 font-medium"></span>
   </div>
 
   <script>
     let brushedSeats = new Set();
-    const today = new Date();
-    const formattedDate = (today.getMonth() + 1).toString().padStart(2, '0') + '/' + today.getDate().toString().padStart(2, '0');
-    document.getElementById('displayDate').innerText = formattedDate;
+    let currentMode = 'today'; // 'today' or 'history'
+    let currentQueryDate = ''; // 'MM/DD'
 
-    function generateSeats() {
+    // 初始化日期
+    const today = new Date();
+    const formattedToday = (today.getMonth() + 1).toString().padStart(2, '0') + '/' + today.getDate().toString().padStart(2, '0');
+    document.getElementById('displayDate').innerText = formattedToday;
+
+    // 設定查詢日期的預設值為今日
+    document.getElementById('queryDate').valueAsDate = new Date();
+
+    // 初始化
+    window.onload = () => {
+      generateSeats();
+    };
+
+    // 切換分頁
+    function switchTab(mode) {
+      currentMode = mode;
+      document.getElementById('tab-today').className = `tab-btn ${mode === 'today' ? 'active' : ''}`;
+      document.getElementById('tab-history').className = `tab-btn ${mode === 'history' ? 'active' : ''}`;
+      
+      if (mode === 'today') {
+        document.getElementById('controls-today').classList.remove('hidden');
+        document.getElementById('controls-history').classList.add('hidden');
+        document.getElementById('btn-delete').classList.add('hidden');
+        document.getElementById('submit-text').innerText = "結束記錄 (儲存)";
+        document.getElementById('btn-submit').classList.remove('bg-amber-500', 'hover:bg-amber-600');
+        document.getElementById('btn-submit').classList.add('bg-sky-600', 'hover:bg-sky-700');
+        document.getElementById('emptyState').classList.add('hidden');
+        document.getElementById('seatsGrid').classList.remove('hidden');
+        
+        // 重置為今日狀態
+        resetUI();
+      } else {
+        document.getElementById('controls-today').classList.add('hidden');
+        document.getElementById('controls-history').classList.remove('hidden');
+        document.getElementById('submit-text').innerText = "修改並儲存";
+        document.getElementById('btn-submit').classList.remove('bg-sky-600', 'hover:bg-sky-700');
+        document.getElementById('btn-submit').classList.add('bg-amber-500', 'hover:bg-amber-600');
+        
+        // 歷史模式初始狀態
+        document.getElementById('seatsGrid').innerHTML = '';
+        document.getElementById('emptyState').classList.remove('hidden');
+        document.getElementById('btn-submit').classList.add('hidden');
+        document.getElementById('btn-delete').classList.add('hidden');
+      }
+    }
+
+    // 生成座號
+    function generateSeats(seatData = null) {
       const count = parseInt(document.getElementById('studentCount').value);
       const grid = document.getElementById('seatsGrid');
       grid.innerHTML = '';
-      brushedSeats.clear();
+      
+      // 如果沒有傳入特定資料，則清空選取狀態
+      if (!seatData) brushedSeats.clear();
+
       for (let i = 1; i <= count; i++) {
         const btn = document.createElement('button');
         btn.innerText = i;
         btn.id = `seat-${i}`;
-        // 調整：w-16 h-16 (64px) 以及 text-xl
-        btn.className = 'seat-btn not-brushed w-20 h-20 text-xl rounded-full font-bold flex items-center justify-center';
+        
+        // 判斷初始狀態
+        let isBrushed = false;
+        if (seatData) {
+          if (seatData[i] === '是') isBrushed = true;
+        } else {
+          if (brushedSeats.has(i)) isBrushed = true;
+        }
+
+        if (isBrushed) {
+          brushedSeats.add(i);
+          btn.className = 'seat-btn brushed w-16 h-16 text-xl rounded-full font-bold flex items-center justify-center';
+        } else {
+          btn.className = 'seat-btn not-brushed w-16 h-16 text-xl rounded-full font-bold flex items-center justify-center';
+        }
+
         btn.onclick = () => {
-          if (brushedSeats.has(i)) { brushedSeats.delete(i); btn.classList.replace('brushed', 'not-brushed'); }
-          else { brushedSeats.add(i); btn.classList.replace('not-brushed', 'brushed'); }
+          if (brushedSeats.has(i)) { 
+            brushedSeats.delete(i); 
+            btn.className = 'seat-btn not-brushed w-16 h-16 text-xl rounded-full font-bold flex items-center justify-center';
+          } else { 
+            brushedSeats.add(i); 
+            btn.className = 'seat-btn brushed w-16 h-16 text-xl rounded-full font-bold flex items-center justify-center';
+          }
         };
         grid.appendChild(btn);
       }
     }
 
-    async function submitRecords() {
-      const count = parseInt(document.getElementById('studentCount').value);
-      
-      if (!GAS_WEB_APP_URL || !GAS_WEB_APP_URL.includes("script.google.com")) {
-        showMessage("錯誤：請先在 index.html 中設定正確的 GAS 網址", "border-red-500");
+    // 格式化日期 YYYY-MM-DD -> MM/DD
+    function formatDateToMMDD(dateString) {
+      const parts = dateString.split('-'); // [YYYY, MM, DD]
+      if (parts.length === 3) {
+        return `${parts[1]}/${parts[2]}`;
+      }
+      return dateString;
+    }
+
+    // 查詢資料
+    async function queryData() {
+      const dateInput = document.getElementById('queryDate').value;
+      if (!dateInput) {
+        showMessage("請選擇日期", "border-red-500");
         return;
       }
 
-      document.getElementById('loader').classList.remove('hidden');
-      const records = {};
-      for (let i = 1; i <= count; i++) { records[i] = brushedSeats.has(i) ? "是" : "否"; }
+      currentQueryDate = formatDateToMMDD(dateInput);
+      
+      if (!validateUrl()) return;
+
+      showLoader("查詢資料中...");
 
       try {
-        const response = await fetch(GAS_WEB_APP_URL.trim(), { 
-          method: "POST",
-          mode: "no-cors",
-          body: JSON.stringify({ date: formattedDate, records: records }),
-          headers: { "Content-Type": "text/plain" }
-        });
+        const url = `${GAS_WEB_APP_URL.trim()}?action=query&date=${currentQueryDate}`;
+        const response = await fetch(url);
+        const json = await response.json();
 
-        setTimeout(() => {
-          document.getElementById('loader').classList.add('hidden');
-          showMessage("資料已送出！(請檢查試算表)", "border-green-500");
-        }, 1000);
+        hideLoader();
+
+        if (json.status === 'success') {
+          // 隱藏空狀態，顯示網格
+          document.getElementById('emptyState').classList.add('hidden');
+          document.getElementById('seatsGrid').classList.remove('hidden');
+          
+          // 根據資料生成按鈕
+          // 找出最大的座號以設定人數
+          const seats = Object.keys(json.data).map(Number);
+          const maxSeat = seats.length > 0 ? Math.max(...seats) : 30;
+          document.getElementById('studentCount').value = maxSeat;
+          
+          brushedSeats.clear();
+          generateSeats(json.data);
+          
+          // 顯示操作按鈕
+          document.getElementById('btn-submit').classList.remove('hidden');
+          document.getElementById('btn-delete').classList.remove('hidden');
+          
+          showMessage(`已載入 ${currentQueryDate} 的資料`, "border-green-500");
+        } else {
+          showMessage(json.message || "查無資料", "border-amber-500");
+          document.getElementById('seatsGrid').innerHTML = '';
+          document.getElementById('emptyState').classList.remove('hidden');
+          document.getElementById('btn-submit').classList.add('hidden');
+          document.getElementById('btn-delete').classList.add('hidden');
+        }
 
       } catch (err) {
-        document.getElementById('loader').classList.add('hidden');
-        showMessage("連線失敗：" + err, "border-red-500");
+        hideLoader();
+        showMessage("查詢失敗：" + err, "border-red-500");
+        console.error(err);
       }
     }
 
+    // 刪除資料
+    async function deleteData() {
+      if (!confirm(`確定要刪除 ${currentQueryDate} 的所有記錄嗎？此動作無法復原。`)) return;
+
+      if (!validateUrl()) return;
+      showLoader("刪除中...");
+
+      try {
+        const response = await fetch(GAS_WEB_APP_URL.trim(), {
+          method: "POST",
+          // 刪除時我們需要知道結果，所以嘗試不使用 no-cors，
+          // 但如果遇到 CORS 錯誤，伺服器端其實已經執行了。
+          // 為了相容性，我們先用標準模式，若失敗則提示檢查
+          body: JSON.stringify({ action: 'delete', date: currentQueryDate }),
+          headers: { "Content-Type": "text/plain" }
+        });
+        
+        const result = await response.json();
+        hideLoader();
+        
+        if (result.status === 'success' || result.message.includes('已刪除')) {
+           showMessage("刪除成功", "border-green-500");
+           // 清空畫面
+           document.getElementById('seatsGrid').innerHTML = '';
+           document.getElementById('emptyState').classList.remove('hidden');
+           document.getElementById('btn-submit').classList.add('hidden');
+           document.getElementById('btn-delete').classList.add('hidden');
+        } else {
+           showMessage("刪除回應：" + result.message, "border-amber-500");
+        }
+
+      } catch (err) {
+        hideLoader();
+        // 即使發生 CORS 錯誤，通常請求已發送
+        showMessage("已送出刪除請求 (若未消失請重新整理)", "border-gray-500");
+      }
+    }
+
+    // 儲存或更新資料
+    async function submitRecords() {
+      if (!validateUrl()) return;
+
+      const count = parseInt(document.getElementById('studentCount').value);
+      const records = {};
+      for (let i = 1; i <= count; i++) { records[i] = brushedSeats.has(i) ? "是" : "否"; }
+
+      // 決定使用的日期：今日模式用 formattedToday，歷史模式用 currentQueryDate
+      const targetDate = (currentMode === 'today') ? formattedToday : currentQueryDate;
+
+      showLoader("資料儲存中...");
+
+      try {
+        const response = await fetch(GAS_WEB_APP_URL.trim(), {
+          method: "POST",
+          body: JSON.stringify({ action: 'save', date: targetDate, records: records }),
+          headers: { "Content-Type": "text/plain" }
+        });
+
+        const result = await response.json();
+        hideLoader();
+        showMessage(result.message || "儲存成功", "border-green-500");
+
+      } catch (err) {
+        hideLoader();
+        // 如果是歷史修改模式，可能會有 CORS 警告但成功
+        showMessage("已送出資料", "border-blue-500");
+      }
+    }
+
+    // 工具函式
+    function validateUrl() {
+      if (!GAS_WEB_APP_URL || !GAS_WEB_APP_URL.includes("script.google.com")) {
+        showMessage("錯誤：請先設定 GAS 網址", "border-red-500");
+        return false;
+      }
+      return true;
+    }
+
     function resetUI() {
-      document.getElementById('seatsGrid').innerHTML = '';
-      brushedSeats.clear();
-      showMessage("已重置", "border-gray-500");
+      if (currentMode === 'today') {
+        generateSeats(); // 重生空白按鈕
+      } else {
+        document.getElementById('queryDate').value = '';
+        document.getElementById('seatsGrid').innerHTML = '';
+        document.getElementById('emptyState').classList.remove('hidden');
+        document.getElementById('btn-submit').classList.add('hidden');
+        document.getElementById('btn-delete').classList.add('hidden');
+      }
+      showMessage("畫面已重置", "border-gray-500");
+    }
+
+    function showLoader(text) {
+      document.getElementById('loader-text').innerText = text;
+      document.getElementById('loader').classList.remove('hidden');
+    }
+
+    function hideLoader() {
+      document.getElementById('loader').classList.add('hidden');
     }
 
     function showMessage(text, borderColor) {
       const box = document.getElementById('messageBox');
       const txt = document.getElementById('messageText');
-      box.className = `fixed top-5 left-1/2 -translate-x-1/2 bg-white border-l-4 shadow-xl p-4 rounded-lg z-50 ${borderColor}`;
+      box.className = `fixed top-5 left-1/2 -translate-x-1/2 bg-white border-l-4 shadow-xl p-4 rounded-lg z-50 ${borderColor} animate__animated animate__fadeInDown`;
       txt.innerText = text;
       box.classList.remove('hidden');
       setTimeout(() => box.classList.add('hidden'), 3000);
     }
-
-    window.onload = generateSeats;
   </script>
 </body>
 </html>

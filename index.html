@@ -9,10 +9,12 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
     body { font-family: 'Noto Sans TC', sans-serif; background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%); min-height: 100vh; }
-    .seat-btn { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    
+    .seat-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
     .seat-btn:active { transform: scale(0.95); }
     .brushed { background-color: white !important; color: #0369a1 !important; border: 3px solid #0ea5e9; }
     .not-brushed { background-color: #0ea5e9; color: white; border: 3px solid transparent; }
+    
     .watermark { position: fixed; bottom: 10px; right: 15px; opacity: 0.4; font-size: 14px; pointer-events: none; color: #64748b; }
     .loading-overlay { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px); }
     
@@ -21,22 +23,29 @@
     .tab-btn.active { @apply bg-white text-sky-600 shadow-sm; }
     .tab-btn:not(.active):hover { @apply text-white bg-sky-700/50; }
 
-    /* Table Styles */
-    .weekly-table th { @apply bg-sky-100 text-sky-800 p-2 border border-sky-200 text-center whitespace-nowrap; }
-    .weekly-table td { @apply p-2 border border-sky-100 text-center; }
+    /* Weekly Table Styles */
+    .weekly-table th { @apply bg-sky-100 text-sky-800 p-3 border border-sky-200 text-center whitespace-nowrap sticky top-0 font-bold; }
+    .weekly-table td { @apply p-2 border border-sky-100 text-center align-middle h-14 w-14 sm:w-auto; }
     .weekly-table tr:nth-child(even) { @apply bg-sky-50/50; }
+    
+    /* Weekly Toggle Button */
+    .weekly-cell-btn { 
+      @apply w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mx-auto transition-all cursor-pointer;
+    }
+    .status-yes { @apply bg-white border-2 border-green-500 text-green-600; }
+    .status-no { @apply bg-gray-200 text-gray-400 border-2 border-transparent hover:bg-gray-300; }
+    .status-none { @apply text-gray-300 text-xs; }
   </style>
 </head>
 <body class="p-4 md:p-8">
 
-  <!-- 請在此處填入您 GAS 部署後獲得的「網頁應用程式網址」 -->
   <script>
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx1IiEb8EM2taNU2HHA9wtwWB9jma1Cl7Ppronvo9LYcJH-Q_qiVTDG5wdl98FmcU-U/exec";
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxnRnPEUsDCbaPDJ4fDkWiY5m-hNeC7aIacQ9MFLe-6odNaQcZa9ohSb-y2uxOfdGgq/exec";
   </script>
 
-  <div class="max-w-5xl mx-auto rounded-3xl shadow-2xl overflow-hidden animate__animated animate__fadeIn">
+  <div class="max-w-6xl mx-auto rounded-3xl shadow-2xl overflow-hidden animate__animated animate__fadeIn">
     
-    <!-- Header with Tabs -->
+    <!-- Header -->
     <div class="bg-sky-600 px-6 pt-6 pb-0">
       <div class="flex flex-col md:flex-row justify-between items-center mb-4">
         <h1 class="text-2xl md:text-3xl font-bold text-white flex items-center mb-4 md:mb-0">
@@ -48,17 +57,17 @@
       <div class="flex overflow-x-auto">
         <button id="tab-today" onclick="switchTab('today')" class="tab-btn active shrink-0">今日記錄</button>
         <button id="tab-history" onclick="switchTab('history')" class="tab-btn shrink-0">單日查詢/修改</button>
-        <button id="tab-weekly" onclick="switchTab('weekly')" class="tab-btn shrink-0">一週總覽</button>
+        <button id="tab-weekly" onclick="switchTab('weekly')" class="tab-btn shrink-0">一週總覽 (可編輯)</button>
       </div>
     </div>
 
-    <!-- Main Content Area -->
-    <div class="bg-white min-h-[500px]">
+    <!-- Main Content -->
+    <div class="bg-white min-h-[500px] flex flex-col">
       
-      <!-- Control Panel -->
+      <!-- Controls -->
       <div class="p-6 border-b border-gray-100 bg-sky-50">
         
-        <!-- Today Mode Controls -->
+        <!-- Today Controls -->
         <div id="controls-today" class="mode-control flex flex-col md:flex-row items-center gap-4">
           <div class="flex items-center gap-3">
             <label class="text-gray-700 font-medium">學生人數：</label>
@@ -70,7 +79,7 @@
           </div>
         </div>
 
-        <!-- History Mode Controls -->
+        <!-- History Controls -->
         <div id="controls-history" class="mode-control hidden flex flex-col md:flex-row items-center gap-4 w-full">
           <div class="flex items-center gap-3 w-full">
             <label class="text-gray-700 font-medium">查詢日期：</label>
@@ -82,9 +91,9 @@
           </div>
         </div>
 
-        <!-- Weekly Mode Controls -->
-        <div id="controls-weekly" class="mode-control hidden flex flex-col md:flex-row items-center gap-4 w-full">
-          <div class="flex items-center gap-3 w-full">
+        <!-- Weekly Controls -->
+        <div id="controls-weekly" class="mode-control hidden flex flex-col md:flex-row items-center gap-4 w-full justify-between">
+          <div class="flex items-center gap-3">
             <label class="text-gray-700 font-medium">起始日期 (週一)：</label>
             <input type="date" id="weeklyStartDate" class="px-3 py-2 border-2 border-sky-200 rounded-lg text-lg text-gray-700">
             <button onclick="queryWeeklyData()" class="bg-emerald-500 text-white px-6 py-2 rounded-lg hover:bg-emerald-600 font-medium shadow-sm flex items-center gap-2">
@@ -92,54 +101,61 @@
               顯示一週記錄
             </button>
           </div>
-        </div>
-
-      </div>
-
-      <!-- Content Views -->
-      <div class="relative">
-        
-        <!-- 1. Seat Grid View (For Today & History) -->
-        <div id="seatsGrid" class="p-6 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-6 justify-items-center min-h-[300px]">
-          <!-- Seats generated here -->
-        </div>
-        
-        <!-- 2. Weekly Table View -->
-        <div id="weeklyView" class="hidden p-6 overflow-x-auto min-h-[300px]">
-          <table class="w-full weekly-table border-collapse">
-            <thead>
-              <tr id="weeklyHeaderRow">
-                <!-- Headers generated by JS -->
-              </tr>
-            </thead>
-            <tbody id="weeklyBody">
-              <!-- Rows generated by JS -->
-            </tbody>
-          </table>
-          <div id="weeklyEmpty" class="hidden text-center text-gray-400 mt-10">
-            <p class="text-lg">請選擇起始日期並查詢</p>
+          <div class="text-sm text-gray-500 mt-2 md:mt-0">
+             💡 點擊表格內圓圈可修改狀態
           </div>
         </div>
 
-        <!-- Empty State Message for Grid -->
+      </div>
+
+      <!-- Views -->
+      <div class="relative flex-grow">
+        
+        <!-- Grid View (Today/History) -->
+        <div id="seatsGrid" class="p-6 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-6 justify-items-center min-h-[300px]"></div>
+        
+        <!-- Weekly Table View -->
+        <div id="weeklyView" class="hidden p-6 overflow-x-auto min-h-[300px]">
+          <table class="w-full weekly-table border-collapse">
+            <thead>
+              <tr id="weeklyHeaderRow"></tr>
+            </thead>
+            <tbody id="weeklyBody"></tbody>
+          </table>
+          <div id="weeklyEmpty" class="hidden text-center text-gray-400 mt-10">
+            <p class="text-lg">請選擇起始日期並點擊「顯示一週記錄」</p>
+          </div>
+          
+          <!-- Weekly Action Buttons -->
+          <div id="weeklyActions" class="hidden mt-8 flex justify-center gap-6">
+            <button onclick="switchTab('today')" class="px-6 py-3 border-2 border-gray-300 text-gray-600 rounded-xl hover:bg-gray-100 font-bold flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+              回記錄畫面
+            </button>
+            <button onclick="saveWeeklyChanges()" class="px-8 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-bold shadow-lg flex items-center gap-2 transform transition-transform hover:scale-105">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+              儲存本週修改
+            </button>
+          </div>
+        </div>
+
+        <!-- Empty State -->
         <div id="emptyState" class="hidden absolute inset-0 flex flex-col items-center justify-center text-gray-400 pointer-events-none">
           <svg class="h-16 w-16 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <p class="text-lg">請選擇日期並點擊查詢</p>
+          <p class="text-lg">請選擇日期並查詢</p>
         </div>
       </div>
 
-      <!-- Footer Actions -->
-      <div class="p-6 border-t border-gray-100 flex justify-between items-center bg-gray-50">
+      <!-- Footer (Today/History only) -->
+      <div id="footer-actions" class="p-6 border-t border-gray-100 flex justify-between items-center bg-gray-50">
         <button onclick="resetUI()" class="flex items-center gap-2 px-6 py-2 border-2 border-gray-300 text-gray-500 rounded-xl hover:bg-white transition-all font-medium">
-          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg>
-          畫面重置
+          重置
         </button>
 
         <div class="flex gap-4">
           <button id="btn-delete" onclick="deleteData()" class="hidden bg-red-100 text-red-600 border-2 border-red-200 px-6 py-2 rounded-xl font-bold hover:bg-red-200 transition-colors">
             刪除此日記錄
           </button>
-          
           <button id="btn-submit" onclick="submitRecords()" class="bg-sky-600 text-white px-8 py-2 rounded-xl font-bold hover:bg-sky-700 transition-colors shadow-md flex items-center gap-2">
             <span id="submit-text">結束記錄 (儲存)</span>
           </button>
@@ -154,9 +170,8 @@
   <!-- Loading & Message -->
   <div id="loader" class="hidden fixed inset-0 loading-overlay flex flex-col items-center justify-center z-50">
     <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-sky-600"></div>
-    <p id="loader-text" class="mt-4 text-sky-800 font-bold">資料處理中...</p>
+    <p id="loader-text" class="mt-4 text-sky-800 font-bold">處理中...</p>
   </div>
-
   <div id="messageBox" class="hidden fixed top-5 left-1/2 -translate-x-1/2 bg-white border-l-4 shadow-xl p-4 rounded-lg z-50 animate__animated animate__fadeInDown">
     <span id="messageText" class="text-gray-800 font-medium"></span>
   </div>
@@ -165,14 +180,16 @@
     let brushedSeats = new Set();
     let currentMode = 'today'; 
     let currentQueryDate = ''; 
+    
+    // 用於儲存週檢視的即時資料狀態 [seat]: [status_day0, status_day1...]
+    let weeklyDataCache = {}; 
+    let weeklyDates = []; 
 
     const today = new Date();
     const formattedToday = (today.getMonth() + 1).toString().padStart(2, '0') + '/' + today.getDate().toString().padStart(2, '0');
     document.getElementById('displayDate').innerText = formattedToday;
     
-    // 初始化日期輸入
     document.getElementById('queryDate').valueAsDate = new Date();
-    // 設定週檢視預設為本週一
     const day = today.getDay();
     const diff = today.getDate() - day + (day == 0 ? -6 : 1); 
     const monday = new Date(today.setDate(diff));
@@ -183,48 +200,184 @@
     function switchTab(mode) {
       currentMode = mode;
       
-      // Update Tab Styles
       ['today', 'history', 'weekly'].forEach(m => {
         document.getElementById(`tab-${m}`).className = `tab-btn shrink-0 ${mode === m ? 'active' : ''}`;
         document.getElementById(`controls-${m}`).classList.add('hidden');
       });
       document.getElementById(`controls-${mode}`).classList.remove('hidden');
 
-      // Update View Visibility
       const grid = document.getElementById('seatsGrid');
       const weekly = document.getElementById('weeklyView');
       const empty = document.getElementById('emptyState');
-      const btnSubmit = document.getElementById('btn-submit');
-      const btnDelete = document.getElementById('btn-delete');
+      const footer = document.getElementById('footer-actions');
 
       grid.classList.add('hidden');
       weekly.classList.add('hidden');
       empty.classList.add('hidden');
-      btnSubmit.classList.add('hidden');
-      btnDelete.classList.add('hidden');
+      footer.classList.remove('hidden'); // Default show
 
       if (mode === 'today') {
         grid.classList.remove('hidden');
-        btnSubmit.classList.remove('hidden');
+        document.getElementById('btn-submit').classList.remove('hidden');
+        document.getElementById('btn-delete').classList.add('hidden');
         document.getElementById('submit-text').innerText = "結束記錄 (儲存)";
-        btnSubmit.className = "bg-sky-600 text-white px-8 py-2 rounded-xl font-bold hover:bg-sky-700 transition-colors shadow-md flex items-center gap-2";
         resetUI();
       } else if (mode === 'history') {
         grid.classList.remove('hidden');
         empty.classList.remove('hidden');
+        document.getElementById('btn-submit').classList.add('hidden');
+        document.getElementById('btn-delete').classList.add('hidden');
         document.getElementById('submit-text').innerText = "修改並儲存";
-        btnSubmit.className = "bg-amber-500 text-white px-8 py-2 rounded-xl font-bold hover:bg-amber-600 transition-colors shadow-md flex items-center gap-2 hidden";
-        // History mode starts empty until query
         grid.innerHTML = '';
       } else if (mode === 'weekly') {
         weekly.classList.remove('hidden');
+        footer.classList.add('hidden'); // Hide bottom footer in weekly mode
         document.getElementById('weeklyEmpty').classList.remove('hidden');
+        document.getElementById('weeklyActions').classList.add('hidden');
         document.getElementById('weeklyBody').innerHTML = '';
         document.getElementById('weeklyHeaderRow').innerHTML = '';
       }
     }
 
-    // --- 座號生成與邏輯 (Today & History) ---
+    // --- 週檢視邏輯 ---
+    async function queryWeeklyData() {
+      const startDate = document.getElementById('weeklyStartDate').value;
+      if (!startDate) { showMessage("請選擇起始日期", "border-red-500"); return; }
+      if (!validateUrl()) return;
+
+      showLoader("讀取週資料...");
+      try {
+        const url = `${GAS_WEB_APP_URL.trim()}?action=weekly_query&startDate=${startDate}`;
+        const response = await fetch(url);
+        const json = await response.json();
+        hideLoader();
+
+        if (json.status === 'success') {
+           weeklyDates = json.dates;
+           weeklyDataCache = json.data;
+           renderWeeklyTable();
+           document.getElementById('weeklyEmpty').classList.add('hidden');
+           document.getElementById('weeklyActions').classList.remove('hidden');
+        } else {
+           showMessage(json.message, "border-red-500");
+        }
+      } catch (err) {
+        hideLoader();
+        showMessage("查詢失敗：" + err, "border-red-500");
+      }
+    }
+
+    function renderWeeklyTable() {
+      const headerRow = document.getElementById('weeklyHeaderRow');
+      const body = document.getElementById('weeklyBody');
+      headerRow.innerHTML = '<th>座號</th>';
+      body.innerHTML = '';
+
+      weeklyDates.forEach(d => {
+        const th = document.createElement('th');
+        th.innerText = d;
+        headerRow.appendChild(th);
+      });
+
+      const seats = Object.keys(weeklyDataCache).map(Number).sort((a,b) => a-b);
+      
+      seats.forEach(seat => {
+        const tr = document.createElement('tr');
+        
+        // 座號
+        const tdSeat = document.createElement('td');
+        tdSeat.className = "font-bold text-sky-700 bg-sky-50";
+        tdSeat.innerText = seat;
+        tr.appendChild(tdSeat);
+
+        // 狀態格
+        const weekStatus = weeklyDataCache[seat]; 
+        weekStatus.forEach((status, dayIndex) => {
+          const td = document.createElement('td');
+          
+          const btn = document.createElement('div');
+          btn.className = "weekly-cell-btn";
+          
+          if (status === '是') {
+             btn.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>';
+             btn.classList.add('status-yes');
+             btn.onclick = () => toggleWeeklyCell(seat, dayIndex, '否');
+          } else if (status === '否') {
+             btn.innerText = "";
+             btn.classList.add('status-no');
+             btn.onclick = () => toggleWeeklyCell(seat, dayIndex, '是');
+          } else {
+             // 無資料狀態，預設點擊變 "是" (建立資料)
+             btn.innerText = "-";
+             btn.classList.add('status-none');
+             btn.onclick = () => toggleWeeklyCell(seat, dayIndex, '是');
+          }
+          
+          td.appendChild(btn);
+          tr.appendChild(td);
+        });
+        body.appendChild(tr);
+      });
+    }
+
+    function toggleWeeklyCell(seat, dayIndex, newStatus) {
+      // 更新 Cache
+      weeklyDataCache[seat][dayIndex] = newStatus;
+      // 局部重新渲染 (為了簡單起見，直接重繪表格，資料量小不影響效能)
+      renderWeeklyTable();
+    }
+
+    async function saveWeeklyChanges() {
+      if (!validateUrl()) return;
+      showLoader("正在儲存本週修改...");
+
+      // 將 weeklyDataCache 轉換為後端 batchSave 需要的格式
+      // dataset: [ { date: "02/02", records: {1:"是"...} }, ... ]
+      let dataset = [];
+      
+      weeklyDates.forEach((dateStr, index) => {
+        let dailyRecords = {};
+        let hasData = false;
+        
+        for (const seat in weeklyDataCache) {
+          const status = weeklyDataCache[seat][index];
+          // 過濾掉 '-' (未建立且未修改) 的資料，只儲存 '是' 或 '否'
+          if (status === '是' || status === '否') {
+            dailyRecords[seat] = status;
+            hasData = true;
+          }
+        }
+        
+        // 即使該日全部都是 "否"，只要有編輯過或原本有資料，就送出
+        if (hasData) {
+          dataset.push({
+            date: dateStr,
+            records: dailyRecords
+          });
+        }
+      });
+
+      try {
+        const response = await fetch(GAS_WEB_APP_URL.trim(), {
+          method: "POST",
+          body: JSON.stringify({ action: 'batch_save', dataset: dataset }),
+          headers: { "Content-Type": "text/plain" }
+        });
+        const result = await response.json();
+        hideLoader();
+        
+        if (result.status === 'success') {
+          showMessage(result.message, "border-green-500");
+        } else {
+          showMessage("儲存失敗：" + result.message, "border-red-500");
+        }
+      } catch (err) {
+        hideLoader();
+        showMessage("連線異常，但請求已發送", "border-blue-500");
+      }
+    }
+
+    // --- 其他功能 ---
     function generateSeats(seatData = null) {
       const count = parseInt(document.getElementById('studentCount').value);
       const grid = document.getElementById('seatsGrid');
@@ -237,11 +390,8 @@
         btn.id = `seat-${i}`;
         
         let isBrushed = false;
-        if (seatData) {
-           isBrushed = (seatData[i] === '是');
-        } else {
-           isBrushed = brushedSeats.has(i);
-        }
+        if (seatData) isBrushed = (seatData[i] === '是');
+        else isBrushed = brushedSeats.has(i);
 
         btn.className = isBrushed 
           ? 'seat-btn brushed w-16 h-16 text-xl rounded-full font-bold flex items-center justify-center'
@@ -261,79 +411,8 @@
         grid.appendChild(btn);
       }
     }
-
-    // --- 週檢視邏輯 ---
-    async function queryWeeklyData() {
-      const startDate = document.getElementById('weeklyStartDate').value;
-      if (!startDate) { showMessage("請選擇起始日期", "border-red-500"); return; }
-      if (!validateUrl()) return;
-
-      showLoader("查詢一週資料中...");
-
-      try {
-        const url = `${GAS_WEB_APP_URL.trim()}?action=weekly_query&startDate=${startDate}`;
-        const response = await fetch(url);
-        const json = await response.json();
-        hideLoader();
-
-        if (json.status === 'success') {
-           renderWeeklyTable(json.dates, json.data);
-           document.getElementById('weeklyEmpty').classList.add('hidden');
-        } else {
-           showMessage(json.message, "border-red-500");
-        }
-      } catch (err) {
-        hideLoader();
-        showMessage("查詢失敗：" + err, "border-red-500");
-      }
-    }
-
-    function renderWeeklyTable(dates, data) {
-      const headerRow = document.getElementById('weeklyHeaderRow');
-      const body = document.getElementById('weeklyBody');
-      headerRow.innerHTML = '<th>座號</th>';
-      body.innerHTML = '';
-
-      // Render Header
-      dates.forEach(d => {
-        const th = document.createElement('th');
-        th.innerText = d;
-        headerRow.appendChild(th);
-      });
-
-      // Render Rows
-      // keys usually are seat numbers. Sort them.
-      const seats = Object.keys(data).map(Number).sort((a,b) => a-b);
-      
-      seats.forEach(seat => {
-        const tr = document.createElement('tr');
-        
-        // Seat Cell
-        const tdSeat = document.createElement('td');
-        tdSeat.className = "font-bold text-sky-700 bg-sky-50";
-        tdSeat.innerText = seat;
-        tr.appendChild(tdSeat);
-
-        // Data Cells
-        const weekStatus = data[seat]; // Array of 7 statuses
-        weekStatus.forEach(status => {
-          const td = document.createElement('td');
-          if (status === '是') {
-             td.innerHTML = '<span class="text-green-500 font-bold">●</span>'; // Checkmark
-             td.className = "bg-green-50";
-          } else if (status === '否') {
-             td.innerHTML = '<span class="text-gray-300">○</span>';
-          } else {
-             td.innerText = "-"; // No data column
-             td.className = "text-gray-300 bg-gray-50";
-          }
-          tr.appendChild(td);
-        });
-        body.appendChild(tr);
-      });
-    }
-
-    // --- 通用功能 (查詢單日、刪除、儲存) ---
+    
+    // 省略部分重複的 queryData, submitRecords 函數，保持原樣即可，此處為完整整合
     function formatDateToMMDD(dateString) {
       const parts = dateString.split('-'); 
       if (parts.length === 3) return `${parts[1]}/${parts[2]}`;
@@ -358,7 +437,6 @@
           const seats = Object.keys(json.data).map(Number);
           const maxSeat = seats.length > 0 ? Math.max(...seats) : 30;
           document.getElementById('studentCount').value = maxSeat;
-          brushedSeats.clear();
           generateSeats(json.data);
           document.getElementById('btn-submit').classList.remove('hidden');
           document.getElementById('btn-delete').classList.remove('hidden');
@@ -391,7 +469,7 @@
         resetUI();
       } catch (err) {
         hideLoader();
-        showMessage("已送出請求 (若未反應請刷新)", "border-gray-500");
+        showMessage("已送出請求", "border-gray-500");
       }
     }
 
@@ -434,18 +512,11 @@
         document.getElementById('emptyState').classList.remove('hidden');
         document.getElementById('btn-submit').classList.add('hidden');
         document.getElementById('btn-delete').classList.add('hidden');
-      } else {
-        document.getElementById('weeklyBody').innerHTML = '';
-        document.getElementById('weeklyHeaderRow').innerHTML = '';
-        document.getElementById('weeklyEmpty').classList.remove('hidden');
-      }
+      } 
       showMessage("已重置", "border-gray-500");
     }
 
-    function showLoader(text) {
-      document.getElementById('loader-text').innerText = text;
-      document.getElementById('loader').classList.remove('hidden');
-    }
+    function showLoader(text) { document.getElementById('loader-text').innerText = text; document.getElementById('loader').classList.remove('hidden'); }
     function hideLoader() { document.getElementById('loader').classList.add('hidden'); }
     function showMessage(text, borderColor) {
       const box = document.getElementById('messageBox');

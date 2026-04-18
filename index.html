@@ -3,90 +3,148 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>學生潔牙記錄表 (GitHub 版)</title>
+  <title>學生潔牙紀錄表 🍵 (和風版)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+  <!-- 引入思源宋體，呈現日式傳統感 -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
-    body { font-family: 'Noto Sans TC', sans-serif; background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%); min-height: 100vh; }
-    
-    .seat-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-    .seat-btn:active { transform: scale(0.95); }
-    .brushed { background-color: white !important; color: #0369a1 !important; border: 3px solid #0ea5e9; }
-    .not-brushed { background-color: #0ea5e9; color: white; border: 3px solid transparent; }
-    
-    .watermark { position: fixed; bottom: 10px; right: 15px; opacity: 0.4; font-size: 14px; pointer-events: none; color: #64748b; }
-    .loading-overlay { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px); }
-    
-    /* Tab Styles */
-    .tab-btn { @apply px-4 sm:px-6 py-3 font-bold text-sky-100 transition-colors rounded-t-lg text-sm sm:text-base; }
-    .tab-btn.active { @apply bg-white text-sky-600 shadow-sm; }
-    .tab-btn:not(.active):hover { @apply text-white bg-sky-700/50; }
-
-    /* Weekly Table Styles */
-    .weekly-table th { @apply bg-sky-100 text-sky-800 p-3 border border-sky-200 text-center whitespace-nowrap sticky top-0 font-bold; }
-    .weekly-table td { @apply p-2 border border-sky-100 text-center align-middle h-14 w-14 sm:w-auto; }
-    .weekly-table tr:nth-child(even) { @apply bg-sky-50/50; }
-    
-    /* Weekly Toggle Button */
-    .weekly-cell-btn { 
-      @apply w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mx-auto transition-all cursor-pointer;
+    body { 
+      font-family: 'Noto Serif TC', serif; 
+      /* 和紙質感背景 */
+      background-color: #f4f1ea;
+      background-image: url('https://www.transparenttextures.com/patterns/rice-paper.png');
+      min-height: 100vh; 
+      color: #3f3f3c;
     }
-    .status-yes { @apply bg-white border-2 border-green-500 text-green-600; }
-    .status-no { @apply bg-gray-200 text-gray-400 border-2 border-transparent hover:bg-gray-300; }
-    .status-none { @apply text-gray-300 text-xs; }
+    
+    /* 傳統和風卡片 */
+    .wafu-card {
+      background: #faf8f5;
+      border: 1px solid #dcd8ce;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05), inset 0 0 0 1px rgba(255,255,255,0.5);
+      border-radius: 4px; /* 日式風格較少圓角，偏向俐落 */
+    }
+
+    /* 座號按鈕：未刷牙 (木牌/白紙感) */
+    .seat-btn { 
+      transition: all 0.2s ease-out; 
+      position: relative;
+    }
+    .seat-btn:active { 
+      transform: scale(0.92); 
+    }
+    
+    .not-brushed { 
+      background: #e9e6df !important; 
+      color: #78716c !important; 
+      border: 1px solid #d6d3d1; 
+      border-radius: 4px;
+      box-shadow: 1px 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    /* 座號按鈕：已刷牙 (印鑑 Hanko 風格) */
+    .brushed { 
+      background: #fffafa !important; 
+      color: #b91c1c !important; /* 朱紅色 */
+      border: 3px solid #b91c1c; 
+      border-radius: 50% !important; /* 變成圓形印章 */
+      box-shadow: inset 0 0 0 2px #fff, 0 2px 6px rgba(185, 28, 28, 0.15);
+      transform: rotate(-3deg); /* 模擬蓋章微歪的自然感 */
+    }
+    /* 印章內圈 */
+    .brushed::after {
+      content: '';
+      position: absolute;
+      border: 1px solid rgba(185, 28, 28, 0.4);
+      border-radius: 50%;
+      top: 2px; bottom: 2px; left: 2px; right: 2px;
+      pointer-events: none;
+    }
+
+    .watermark { position: fixed; bottom: 10px; right: 15px; opacity: 0.6; font-size: 14px; font-weight: 700; pointer-events: none; color: #78716c; letter-spacing: 2px; }
+    .loading-overlay { background: rgba(244, 241, 234, 0.85); backdrop-filter: blur(4px); }
+    
+    /* 標籤頁 Styles (暖簾/障子門 意象) */
+    .tab-btn { @apply px-6 py-4 font-bold text-stone-400 transition-all text-sm sm:text-base border-b-4 border-transparent; letter-spacing: 1px; }
+    .tab-btn.active { @apply text-emerald-900 border-emerald-800 bg-emerald-50/50; }
+    .tab-btn:not(.active):hover { @apply text-stone-600 bg-stone-100; }
+
+    /* 週表格 Styles */
+    .weekly-table { border-collapse: collapse; }
+    .weekly-table th { @apply bg-stone-100 text-stone-700 p-4 font-bold border-b-2 border-stone-300 text-center whitespace-nowrap; }
+    .weekly-table td { @apply p-3 text-center align-middle border-b border-stone-200 bg-white transition-colors h-16; }
+    .weekly-table tr:hover td { @apply bg-stone-50; }
+    
+    /* 週檢視切換按鈕 (印章縮小版) */
+    .weekly-cell-btn { 
+      @apply w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center mx-auto transition-transform cursor-pointer font-bold text-lg sm:text-xl;
+    }
+    .weekly-cell-btn:active { transform: scale(0.85); }
+    .status-yes { @apply text-red-700 border-2 border-red-700 rounded-full bg-white; transform: rotate(5deg); }
+    .status-no { @apply bg-stone-100 text-stone-400 border border-stone-300 rounded-sm hover:bg-stone-200; }
+    .status-none { @apply text-stone-300 text-sm bg-transparent border border-dashed border-stone-300 hover:bg-stone-50 rounded-sm; }
+
+    /* 客製化捲軸 */
+    ::-webkit-scrollbar { height: 8px; width: 8px; }
+    ::-webkit-scrollbar-track { background: #f4f1ea; }
+    ::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #a8a29e; }
   </style>
 </head>
 <body class="p-4 md:p-8">
 
   <script>
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxnRnPEUsDCbaPDJ4fDkWiY5m-hNeC7aIacQ9MFLe-6odNaQcZa9ohSb-y2uxOfdGgq/exec";
+    const GAS_WEB_APP_URL = "在此貼上您的_GAS_WEB_APP_URL";
   </script>
 
-  <div class="max-w-6xl mx-auto rounded-3xl shadow-2xl overflow-hidden animate__animated animate__fadeIn">
+  <div class="max-w-6xl mx-auto wafu-card overflow-hidden animate__animated animate__fadeIn">
     
-    <!-- Header -->
-    <div class="bg-sky-600 px-6 pt-6 pb-0">
-      <div class="flex flex-col md:flex-row justify-between items-center mb-4">
-        <h1 class="text-2xl md:text-3xl font-bold text-white flex items-center mb-4 md:mb-0">
-          <span class="mr-2">🦷</span> 學生潔牙記錄表
+    <!-- 標題區 (千歲綠/抹茶色系) -->
+    <div class="bg-emerald-900 border-b-4 border-emerald-800 px-6 pt-8 pb-0 relative">
+      <!-- 裝飾性圖紋 -->
+      <div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none text-white text-6xl">❁</div>
+      
+      <div class="flex flex-col md:flex-row justify-between items-center mb-8">
+        <h1 class="text-3xl md:text-4xl font-black text-stone-50 flex items-center mb-4 md:mb-0 tracking-widest drop-shadow-sm relative z-10">
+          <span class="mr-4 text-emerald-200 text-3xl">🍵</span> 學生潔牙紀錄
         </h1>
       </div>
       
       <!-- Tabs -->
-      <div class="flex overflow-x-auto">
-        <button id="tab-today" onclick="switchTab('today')" class="tab-btn active shrink-0">今日記錄</button>
-        <button id="tab-history" onclick="switchTab('history')" class="tab-btn shrink-0">單日查詢/修改</button>
-        <button id="tab-weekly" onclick="switchTab('weekly')" class="tab-btn shrink-0">一週總覽 (可編輯)</button>
+      <div class="flex overflow-x-auto pt-2 bg-white/95 rounded-t-lg mx-2 border-x border-t border-stone-200">
+        <button id="tab-today" onclick="switchTab('today')" class="tab-btn active shrink-0">一・本日紀錄</button>
+        <button id="tab-history" onclick="switchTab('history')" class="tab-btn shrink-0">二・歷史紀錄</button>
+        <button id="tab-weekly" onclick="switchTab('weekly')" class="tab-btn shrink-0">三・一週總覽</button>
       </div>
     </div>
 
     <!-- Main Content -->
     <div class="bg-white min-h-[500px] flex flex-col">
       
-      <!-- Controls -->
-      <div class="p-6 border-b border-gray-100 bg-sky-50">
+      <!-- 控制台面板 -->
+      <div class="p-6 border-b border-stone-200 bg-stone-50/80">
         
         <!-- Today Controls -->
         <div id="controls-today" class="mode-control flex flex-col md:flex-row items-center gap-4">
           <div class="flex items-center gap-3">
-            <label class="text-gray-700 font-medium">學生人數：</label>
-            <input type="number" id="studentCount" min="1" max="100" value="30" class="w-20 px-3 py-2 border-2 border-sky-200 rounded-lg text-lg">
-            <button onclick="generateSeats()" class="bg-sky-500 text-white px-4 py-2 rounded-lg hover:bg-sky-600 font-medium">重設座號</button>
+            <label class="text-stone-700 font-bold tracking-wider">學生人數：</label>
+            <input type="number" id="studentCount" min="1" max="100" value="30" class="w-20 px-3 py-2 border border-stone-300 rounded text-xl font-bold text-stone-800 focus:outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700 bg-white text-center">
+            <button onclick="generateSeats()" class="bg-stone-700 text-white px-5 py-2 rounded hover:bg-stone-800 font-bold transition-colors shadow-sm tracking-widest">重設座號</button>
           </div>
-          <div class="text-sm text-sky-600 font-medium ml-auto">
-            今日日期：<span id="displayDate" class="text-lg font-bold"></span>
+          <div class="text-md text-stone-600 font-bold ml-auto px-4 py-2 bg-white border border-stone-200 rounded tracking-widest shadow-sm">
+            今日：<span id="displayDate" class="text-xl font-black text-emerald-800 ml-2"></span>
           </div>
         </div>
 
         <!-- History Controls -->
         <div id="controls-history" class="mode-control hidden flex flex-col md:flex-row items-center gap-4 w-full">
           <div class="flex items-center gap-3 w-full">
-            <label class="text-gray-700 font-medium">查詢日期：</label>
-            <input type="date" id="queryDate" class="px-3 py-2 border-2 border-sky-200 rounded-lg text-lg text-gray-700">
-            <button onclick="queryData()" class="bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-600 font-medium shadow-sm flex items-center gap-2">
+            <label class="text-stone-700 font-bold tracking-wider">查詢日期：</label>
+            <input type="date" id="queryDate" class="px-4 py-2 border border-stone-300 rounded text-lg font-bold text-stone-700 focus:outline-none focus:border-emerald-700 bg-white shadow-sm">
+            <button onclick="queryData()" class="bg-amber-700 text-white px-6 py-2 rounded hover:bg-amber-800 font-bold shadow-sm flex items-center gap-2 transition-colors tracking-widest">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-              查詢
+              查詢紀錄
             </button>
           </div>
         </div>
@@ -94,45 +152,45 @@
         <!-- Weekly Controls -->
         <div id="controls-weekly" class="mode-control hidden flex flex-col md:flex-row items-center gap-4 w-full justify-between">
           <div class="flex items-center gap-3">
-            <label class="text-gray-700 font-medium">起始日期 (週一)：</label>
-            <input type="date" id="weeklyStartDate" class="px-3 py-2 border-2 border-sky-200 rounded-lg text-lg text-gray-700">
-            <button onclick="queryWeeklyData()" class="bg-emerald-500 text-white px-6 py-2 rounded-lg hover:bg-emerald-600 font-medium shadow-sm flex items-center gap-2">
+            <label class="text-stone-700 font-bold tracking-wider">起始日期 (週一)：</label>
+            <input type="date" id="weeklyStartDate" class="px-4 py-2 border border-stone-300 rounded text-lg font-bold text-stone-700 focus:outline-none focus:border-emerald-700 bg-white shadow-sm">
+            <button onclick="queryWeeklyData()" class="bg-emerald-800 text-white px-6 py-2 rounded hover:bg-emerald-900 font-bold shadow-sm flex items-center gap-2 transition-colors tracking-widest">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-              顯示一週記錄
+              顯示一週
             </button>
           </div>
-          <div class="text-sm text-gray-500 mt-2 md:mt-0">
-             💡 點擊表格內圓圈可修改狀態
+          <div class="text-sm text-stone-500 mt-2 md:mt-0 flex items-center gap-1">
+             <span class="text-red-700 border border-red-700 rounded-full w-5 h-5 inline-flex items-center justify-center text-xs font-bold bg-white">已</span>
+             點擊表格內之印記即可修改狀態。
           </div>
         </div>
 
       </div>
 
-      <!-- Views -->
-      <div class="relative flex-grow">
+      <!-- Views (背景疊加極淡的和紙紋理) -->
+      <div class="relative flex-grow bg-[url('https://www.transparenttextures.com/patterns/rice-paper.png')]">
         
         <!-- Grid View (Today/History) -->
-        <div id="seatsGrid" class="p-6 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-6 justify-items-center min-h-[300px]"></div>
+        <div id="seatsGrid" class="p-8 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-x-6 gap-y-8 justify-items-center min-h-[300px]"></div>
         
         <!-- Weekly Table View -->
         <div id="weeklyView" class="hidden p-6 overflow-x-auto min-h-[300px]">
-          <table class="w-full weekly-table border-collapse">
+          <table class="w-full weekly-table">
             <thead>
               <tr id="weeklyHeaderRow"></tr>
             </thead>
             <tbody id="weeklyBody"></tbody>
           </table>
-          <div id="weeklyEmpty" class="hidden text-center text-gray-400 mt-10">
-            <p class="text-lg">請選擇起始日期並點擊「顯示一週記錄」</p>
+          <div id="weeklyEmpty" class="hidden text-center text-stone-400 mt-16">
+            <p class="text-xl font-bold tracking-widest">請選擇起始日期並點擊「顯示一週」</p>
           </div>
           
           <!-- Weekly Action Buttons -->
-          <div id="weeklyActions" class="hidden mt-8 flex justify-center gap-6">
-            <button onclick="switchTab('today')" class="px-6 py-3 border-2 border-gray-300 text-gray-600 rounded-xl hover:bg-gray-100 font-bold flex items-center gap-2">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
-              回記錄畫面
+          <div id="weeklyActions" class="hidden mt-10 flex justify-center gap-6">
+            <button onclick="switchTab('today')" class="px-6 py-2 border border-stone-300 text-stone-600 rounded hover:bg-stone-100 font-bold flex items-center gap-2 transition-colors tracking-widest">
+              返回首頁
             </button>
-            <button onclick="saveWeeklyChanges()" class="px-8 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-bold shadow-lg flex items-center gap-2 transform transition-transform hover:scale-105">
+            <button onclick="saveWeeklyChanges()" class="px-8 py-2 bg-emerald-800 text-white rounded hover:bg-emerald-900 font-bold shadow flex items-center gap-2 transition-colors tracking-widest">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
               儲存本週修改
             </button>
@@ -140,24 +198,24 @@
         </div>
 
         <!-- Empty State -->
-        <div id="emptyState" class="hidden absolute inset-0 flex flex-col items-center justify-center text-gray-400 pointer-events-none">
-          <svg class="h-16 w-16 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <p class="text-lg">請選擇日期並查詢</p>
+        <div id="emptyState" class="hidden absolute inset-0 flex flex-col items-center justify-center text-stone-300 pointer-events-none">
+          <svg class="h-16 w-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+          <p class="text-xl font-bold tracking-widest">請先選擇查詢日期</p>
         </div>
       </div>
 
       <!-- Footer (Today/History only) -->
-      <div id="footer-actions" class="p-6 border-t border-gray-100 flex justify-between items-center bg-gray-50">
-        <button onclick="resetUI()" class="flex items-center gap-2 px-6 py-2 border-2 border-gray-300 text-gray-500 rounded-xl hover:bg-white transition-all font-medium">
-          重置
+      <div id="footer-actions" class="p-6 border-t border-stone-200 flex justify-between items-center bg-stone-50">
+        <button onclick="resetUI()" class="flex items-center gap-2 px-6 py-2 border border-stone-300 text-stone-500 rounded hover:bg-white hover:text-stone-700 transition-colors font-bold tracking-widest">
+          重置畫面
         </button>
 
         <div class="flex gap-4">
-          <button id="btn-delete" onclick="deleteData()" class="hidden bg-red-100 text-red-600 border-2 border-red-200 px-6 py-2 rounded-xl font-bold hover:bg-red-200 transition-colors">
-            刪除此日記錄
+          <button id="btn-delete" onclick="deleteData()" class="hidden bg-white text-red-700 border border-red-700 px-6 py-2 rounded font-bold hover:bg-red-50 transition-colors tracking-widest">
+            刪除此日紀錄
           </button>
-          <button id="btn-submit" onclick="submitRecords()" class="bg-sky-600 text-white px-8 py-2 rounded-xl font-bold hover:bg-sky-700 transition-colors shadow-md flex items-center gap-2">
-            <span id="submit-text">結束記錄 (儲存)</span>
+          <button id="btn-submit" onclick="submitRecords()" class="bg-emerald-800 text-white px-8 py-2 rounded font-bold hover:bg-emerald-900 transition-colors shadow flex items-center gap-2 tracking-widest">
+            <span id="submit-text">儲存紀錄</span>
           </button>
         </div>
       </div>
@@ -165,23 +223,21 @@
     </div>
   </div>
 
-  <div class="watermark">文君製作</div>
+  <div class="watermark">文君製作 🍵</div>
 
   <!-- Loading & Message -->
   <div id="loader" class="hidden fixed inset-0 loading-overlay flex flex-col items-center justify-center z-50">
-    <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-sky-600"></div>
-    <p id="loader-text" class="mt-4 text-sky-800 font-bold">處理中...</p>
+    <div class="animate-spin rounded-full h-12 w-12 border-4 border-stone-200 border-t-emerald-800"></div>
+    <p id="loader-text" class="mt-6 text-emerald-900 text-lg font-bold tracking-widest">處理中，請稍候...</p>
   </div>
-  <div id="messageBox" class="hidden fixed top-5 left-1/2 -translate-x-1/2 bg-white border-l-4 shadow-xl p-4 rounded-lg z-50 animate__animated animate__fadeInDown">
-    <span id="messageText" class="text-gray-800 font-medium"></span>
+  <div id="messageBox" class="hidden fixed top-8 left-1/2 -translate-x-1/2 bg-stone-800 text-white shadow-xl px-8 py-4 rounded z-50 animate__animated animate__fadeInDown border-l-4">
+    <span id="messageText" class="font-bold text-base tracking-widest flex items-center gap-2"></span>
   </div>
 
   <script>
     let brushedSeats = new Set();
     let currentMode = 'today'; 
     let currentQueryDate = ''; 
-    
-    // 用於儲存週檢視的即時資料狀態 [seat]: [status_day0, status_day1...]
     let weeklyDataCache = {}; 
     let weeklyDates = []; 
 
@@ -210,28 +266,31 @@
       const weekly = document.getElementById('weeklyView');
       const empty = document.getElementById('emptyState');
       const footer = document.getElementById('footer-actions');
+      const btnSubmit = document.getElementById('btn-submit');
 
       grid.classList.add('hidden');
       weekly.classList.add('hidden');
       empty.classList.add('hidden');
-      footer.classList.remove('hidden'); // Default show
+      footer.classList.remove('hidden'); 
 
       if (mode === 'today') {
         grid.classList.remove('hidden');
-        document.getElementById('btn-submit').classList.remove('hidden');
+        btnSubmit.classList.remove('hidden');
         document.getElementById('btn-delete').classList.add('hidden');
-        document.getElementById('submit-text').innerText = "結束記錄 (儲存)";
+        document.getElementById('submit-text').innerText = "儲存紀錄";
+        btnSubmit.className = "bg-emerald-800 text-white px-8 py-2 rounded font-bold hover:bg-emerald-900 transition-colors shadow flex items-center gap-2 tracking-widest";
         resetUI();
       } else if (mode === 'history') {
         grid.classList.remove('hidden');
         empty.classList.remove('hidden');
-        document.getElementById('btn-submit').classList.add('hidden');
+        btnSubmit.classList.add('hidden');
         document.getElementById('btn-delete').classList.add('hidden');
         document.getElementById('submit-text').innerText = "修改並儲存";
+        btnSubmit.className = "bg-amber-700 text-white px-8 py-2 rounded font-bold hover:bg-amber-800 transition-colors shadow flex items-center gap-2 hidden tracking-widest";
         grid.innerHTML = '';
       } else if (mode === 'weekly') {
         weekly.classList.remove('hidden');
-        footer.classList.add('hidden'); // Hide bottom footer in weekly mode
+        footer.classList.add('hidden'); 
         document.getElementById('weeklyEmpty').classList.remove('hidden');
         document.getElementById('weeklyActions').classList.add('hidden');
         document.getElementById('weeklyBody').innerHTML = '';
@@ -245,7 +304,7 @@
       if (!startDate) { showMessage("請選擇起始日期", "border-red-500"); return; }
       if (!validateUrl()) return;
 
-      showLoader("讀取週資料...");
+      showLoader("讀取一週紀錄...");
       try {
         const url = `${GAS_WEB_APP_URL.trim()}?action=weekly_query&startDate=${startDate}`;
         const response = await fetch(url);
@@ -270,7 +329,7 @@
     function renderWeeklyTable() {
       const headerRow = document.getElementById('weeklyHeaderRow');
       const body = document.getElementById('weeklyBody');
-      headerRow.innerHTML = '<th>座號</th>';
+      headerRow.innerHTML = '<th class="text-lg w-20">座號</th>';
       body.innerHTML = '';
 
       weeklyDates.forEach(d => {
@@ -286,7 +345,7 @@
         
         // 座號
         const tdSeat = document.createElement('td');
-        tdSeat.className = "font-bold text-sky-700 bg-sky-50";
+        tdSeat.className = "font-black text-xl text-stone-700 bg-stone-50 border-r border-stone-200";
         tdSeat.innerText = seat;
         tr.appendChild(tdSeat);
 
@@ -299,16 +358,15 @@
           btn.className = "weekly-cell-btn";
           
           if (status === '是') {
-             btn.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>';
+             btn.innerText = '已'; // 印章風格字體
              btn.classList.add('status-yes');
              btn.onclick = () => toggleWeeklyCell(seat, dayIndex, '否');
           } else if (status === '否') {
-             btn.innerText = "";
+             btn.innerText = "未";
              btn.classList.add('status-no');
              btn.onclick = () => toggleWeeklyCell(seat, dayIndex, '是');
           } else {
-             // 無資料狀態，預設點擊變 "是" (建立資料)
-             btn.innerText = "-";
+             btn.innerText = "－"; // 中文連字號
              btn.classList.add('status-none');
              btn.onclick = () => toggleWeeklyCell(seat, dayIndex, '是');
           }
@@ -321,40 +379,26 @@
     }
 
     function toggleWeeklyCell(seat, dayIndex, newStatus) {
-      // 更新 Cache
       weeklyDataCache[seat][dayIndex] = newStatus;
-      // 局部重新渲染 (為了簡單起見，直接重繪表格，資料量小不影響效能)
       renderWeeklyTable();
     }
 
     async function saveWeeklyChanges() {
       if (!validateUrl()) return;
-      showLoader("正在儲存本週修改...");
+      showLoader("資料儲存中...");
 
-      // 將 weeklyDataCache 轉換為後端 batchSave 需要的格式
-      // dataset: [ { date: "02/02", records: {1:"是"...} }, ... ]
       let dataset = [];
-      
       weeklyDates.forEach((dateStr, index) => {
         let dailyRecords = {};
         let hasData = false;
-        
         for (const seat in weeklyDataCache) {
           const status = weeklyDataCache[seat][index];
-          // 過濾掉 '-' (未建立且未修改) 的資料，只儲存 '是' 或 '否'
           if (status === '是' || status === '否') {
             dailyRecords[seat] = status;
             hasData = true;
           }
         }
-        
-        // 即使該日全部都是 "否"，只要有編輯過或原本有資料，就送出
-        if (hasData) {
-          dataset.push({
-            date: dateStr,
-            records: dailyRecords
-          });
-        }
+        if (hasData) dataset.push({ date: dateStr, records: dailyRecords });
       });
 
       try {
@@ -367,17 +411,17 @@
         hideLoader();
         
         if (result.status === 'success') {
-          showMessage(result.message, "border-green-500");
+          showMessage(result.message, "border-emerald-500");
         } else {
           showMessage("儲存失敗：" + result.message, "border-red-500");
         }
       } catch (err) {
         hideLoader();
-        showMessage("連線異常，但請求已發送", "border-blue-500");
+        showMessage("連線異常，但請求已送出", "border-amber-500");
       }
     }
 
-    // --- 其他功能 ---
+    // --- 座號生成 (木製牌/印章版) ---
     function generateSeats(seatData = null) {
       const count = parseInt(document.getElementById('studentCount').value);
       const grid = document.getElementById('seatsGrid');
@@ -393,26 +437,24 @@
         if (seatData) isBrushed = (seatData[i] === '是');
         else isBrushed = brushedSeats.has(i);
 
-        btn.className = isBrushed 
-          ? 'seat-btn brushed w-16 h-16 text-xl rounded-full font-bold flex items-center justify-center'
-          : 'seat-btn not-brushed w-16 h-16 text-xl rounded-full font-bold flex items-center justify-center';
+        const baseClass = 'seat-btn w-16 h-16 text-3xl font-bold flex items-center justify-center';
+        btn.className = isBrushed ? `${baseClass} brushed` : `${baseClass} not-brushed`;
         
         if (isBrushed) brushedSeats.add(i);
 
         btn.onclick = () => {
           if (brushedSeats.has(i)) { 
             brushedSeats.delete(i); 
-            btn.className = 'seat-btn not-brushed w-16 h-16 text-xl rounded-full font-bold flex items-center justify-center';
+            btn.className = `${baseClass} not-brushed`;
           } else { 
             brushedSeats.add(i); 
-            btn.className = 'seat-btn brushed w-16 h-16 text-xl rounded-full font-bold flex items-center justify-center';
+            btn.className = `${baseClass} brushed`;
           }
         };
         grid.appendChild(btn);
       }
     }
     
-    // 省略部分重複的 queryData, submitRecords 函數，保持原樣即可，此處為完整整合
     function formatDateToMMDD(dateString) {
       const parts = dateString.split('-'); 
       if (parts.length === 3) return `${parts[1]}/${parts[2]}`;
@@ -425,7 +467,7 @@
       currentQueryDate = formatDateToMMDD(dateInput);
       if (!validateUrl()) return;
 
-      showLoader("查詢中...");
+      showLoader("查詢紀錄中...");
       try {
         const url = `${GAS_WEB_APP_URL.trim()}?action=query&date=${currentQueryDate}`;
         const response = await fetch(url);
@@ -440,9 +482,9 @@
           generateSeats(json.data);
           document.getElementById('btn-submit').classList.remove('hidden');
           document.getElementById('btn-delete').classList.remove('hidden');
-          showMessage(`載入 ${currentQueryDate} 資料`, "border-green-500");
+          showMessage(`成功載入 ${currentQueryDate} 紀錄`, "border-emerald-500");
         } else {
-          showMessage(json.message || "查無資料", "border-amber-500");
+          showMessage(json.message || "查無此日紀錄", "border-amber-500");
           document.getElementById('seatsGrid').innerHTML = '';
           document.getElementById('emptyState').classList.remove('hidden');
           document.getElementById('btn-submit').classList.add('hidden');
@@ -450,14 +492,14 @@
         }
       } catch (err) {
         hideLoader();
-        showMessage("查詢失敗", "border-red-500");
+        showMessage("查詢發生異常", "border-red-500");
       }
     }
 
     async function deleteData() {
-      if (!confirm(`確定刪除 ${currentQueryDate} 記錄？`)) return;
+      if (!confirm(`確認要刪除 ${currentQueryDate} 之所有紀錄？此操作無法復原。`)) return;
       if (!validateUrl()) return;
-      showLoader("刪除中...");
+      showLoader("紀錄刪除中...");
       try {
         await fetch(GAS_WEB_APP_URL.trim(), {
           method: "POST",
@@ -465,11 +507,11 @@
           headers: { "Content-Type": "text/plain" }
         });
         hideLoader();
-        showMessage("已送出刪除請求", "border-green-500");
+        showMessage("紀錄已刪除", "border-red-500");
         resetUI();
       } catch (err) {
         hideLoader();
-        showMessage("已送出請求", "border-gray-500");
+        showMessage("請求已送出", "border-stone-400");
       }
     }
 
@@ -480,7 +522,7 @@
       for (let i = 1; i <= count; i++) { records[i] = brushedSeats.has(i) ? "是" : "否"; }
       const targetDate = (currentMode === 'today') ? formattedToday : currentQueryDate;
 
-      showLoader("儲存中...");
+      showLoader("資料儲存中...");
       try {
         const response = await fetch(GAS_WEB_APP_URL.trim(), {
           method: "POST",
@@ -489,16 +531,16 @@
         });
         const result = await response.json();
         hideLoader();
-        showMessage(result.message || "儲存成功", "border-green-500");
+        showMessage(result.message || "紀錄已儲存。", "border-emerald-500");
       } catch (err) {
         hideLoader();
-        showMessage("已送出資料", "border-blue-500");
+        showMessage("連線異常，但請求已發送", "border-amber-500");
       }
     }
 
     function validateUrl() {
       if (!GAS_WEB_APP_URL || !GAS_WEB_APP_URL.includes("script.google.com")) {
-        showMessage("錯誤：請先設定 GAS 網址", "border-red-500");
+        showMessage("請先設定 GAS 網址", "border-red-500");
         return false;
       }
       return true;
@@ -513,7 +555,7 @@
         document.getElementById('btn-submit').classList.add('hidden');
         document.getElementById('btn-delete').classList.add('hidden');
       } 
-      showMessage("已重置", "border-gray-500");
+      showMessage("畫面已重置", "border-stone-500");
     }
 
     function showLoader(text) { document.getElementById('loader-text').innerText = text; document.getElementById('loader').classList.remove('hidden'); }
@@ -521,10 +563,14 @@
     function showMessage(text, borderColor) {
       const box = document.getElementById('messageBox');
       const txt = document.getElementById('messageText');
-      box.className = `fixed top-5 left-1/2 -translate-x-1/2 bg-white border-l-4 shadow-xl p-4 rounded-lg z-50 ${borderColor} animate__animated animate__fadeInDown`;
+      
+      // 暗色底色的訊息框
+      box.className = `fixed top-8 left-1/2 -translate-x-1/2 bg-stone-800 text-white shadow-xl px-8 py-4 rounded z-50 ${borderColor} border-l-4 animate__animated animate__fadeInDown`;
+      txt.className = `font-bold text-base tracking-widest flex items-center gap-2`;
       txt.innerText = text;
+      
       box.classList.remove('hidden');
-      setTimeout(() => box.classList.add('hidden'), 3000);
+      setTimeout(() => box.classList.add('hidden'), 3500);
     }
   </script>
 </body>

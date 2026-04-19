@@ -171,7 +171,8 @@
       <div class="relative flex-grow bg-[url('https://www.transparenttextures.com/patterns/rice-paper.png')]">
         
         <!-- Grid View (Today/History) -->
-        <div id="seatsGrid" class="p-8 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-x-6 gap-y-8 justify-items-center min-h-[300px]"></div>
+        <!-- 調整：修改了 grid-cols 與 gap，確保放大後的按鈕能完美排列 -->
+        <div id="seatsGrid" class="p-6 sm:p-8 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4 sm:gap-6 lg:gap-8 justify-items-center min-h-[300px]"></div>
         
         <!-- Weekly Table View -->
         <div id="weeklyView" class="hidden p-6 overflow-x-auto min-h-[300px]">
@@ -437,7 +438,8 @@
         if (seatData) isBrushed = (seatData[i] === '是');
         else isBrushed = brushedSeats.has(i);
 
-        const baseClass = 'seat-btn w-16 h-16 text-3xl font-bold flex items-center justify-center';
+        // 調整：將按鈕加大至 w-20 h-20 (手機) / w-24 h-24 (電腦)，字體加大至 text-4xl / text-5xl
+        const baseClass = 'seat-btn w-20 h-20 sm:w-24 sm:h-24 text-4xl sm:text-5xl font-bold flex items-center justify-center';
         btn.className = isBrushed ? `${baseClass} brushed` : `${baseClass} not-brushed`;
         
         if (isBrushed) brushedSeats.add(i);

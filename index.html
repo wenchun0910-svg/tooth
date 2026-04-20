@@ -241,6 +241,8 @@
     let currentQueryDate = ''; 
     let weeklyDataCache = {}; 
     let weeklyDates = []; 
+    // 定義 localStorage 儲存學生人數的 Key
+    const STORAGE_KEY_STUDENT_COUNT = 'wafu_student_count';
 
     const today = new Date();
     const formattedToday = (today.getMonth() + 1).toString().padStart(2, '0') + '/' + today.getDate().toString().padStart(2, '0');
@@ -252,7 +254,14 @@
     const monday = new Date(today.setDate(diff));
     document.getElementById('weeklyStartDate').valueAsDate = monday;
 
-    window.onload = () => { generateSeats(); };
+    window.onload = () => { 
+      // 頁面載入時，從 localStorage 讀取儲存的學生人數
+      const savedCount = localStorage.getItem(STORAGE_KEY_STUDENT_COUNT);
+      if (savedCount) {
+        document.getElementById('studentCount').value = savedCount;
+      }
+      generateSeats(); 
+    };
 
     function switchTab(mode) {
       currentMode = mode;
@@ -424,7 +433,18 @@
 
     // --- 座號生成 (木製牌/印章版) ---
     function generateSeats(seatData = null) {
-      const count = parseInt(document.getElementById('studentCount').value);
+      const countInput = document.getElementById('studentCount');
+      let count = parseInt(countInput.value);
+      
+      // 防呆保護：若輸入無效數字或小於1，預設改回30
+      if (isNaN(count) || count < 1) {
+        count = 30;
+        countInput.value = count;
+      }
+      
+      // 將當前的學生人數儲存到 localStorage
+      localStorage.setItem(STORAGE_KEY_STUDENT_COUNT, count);
+
       const grid = document.getElementById('seatsGrid');
       grid.innerHTML = '';
       if (!seatData) brushedSeats.clear();

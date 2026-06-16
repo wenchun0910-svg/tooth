@@ -160,7 +160,7 @@
             </button>
           </div>
           <div class="text-sm text-stone-500 mt-2 md:mt-0 flex items-center gap-1">
-             <span class="text-red-700 border border-red-700 rounded-full w-5 h-5 inline-flex items-center justify-center text-xs font-bold bg-white">已</span>
+             <span class="text-red-700 border border-red-700 rounded-full w-5 h-5 inline-flex items-center justify-center text-xs font-bold bg-white">O</span>
              點擊表格內之印記即可修改狀態。
           </div>
         </div>
@@ -368,11 +368,11 @@
           btn.className = "weekly-cell-btn";
           
           if (status === '是') {
-             btn.innerText = '已'; // 印章風格字體
+             btn.innerText = 'O'; // 印章風格字體
              btn.classList.add('status-yes');
              btn.onclick = () => toggleWeeklyCell(seat, dayIndex, '否');
           } else if (status === '否') {
-             btn.innerText = "未";
+             btn.innerText = "x";
              btn.classList.add('status-no');
              btn.onclick = () => toggleWeeklyCell(seat, dayIndex, '是');
           } else {
